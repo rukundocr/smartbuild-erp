@@ -1,0 +1,33 @@
+<div class="row align-items-center mb-5">
+    <div class="col">
+        <h1 class="fw-bold">Business Overview</h1>
+        <p class="text-secondary">Summary of all projects and site expenditures in <strong>RWF</strong>.</p>
+    </div>
+    <div class="col-auto">
+        <div class="text-end">
+            <p class="mb-0 small text-secondary">Current User</p>
+            <p class="mb-0 fw-bold">{{user.name}}</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 stat-card shadow-sm">
+            <p class="text-secondary small mb-1">CONTRACT PORTFOLIO</p>
+            <h3 class="fw-bold mb-0">{{totalProjectValue}} <span class="fs-6 text-secondary">RWF</span></h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #dc3545;">
+            <p class="text-secondary small mb-1">TOTAL EXPENSES</p>
+            <h3 class="fw-bold mb-0 text-danger">{{totalExpenses}} <span class="fs-6 text-secondary">RWF</span></h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #0dcaf0;">
+            <p class="text-secondary small mb-1">VAT CREDIT (RRA)</p>
+            <h3 class="fw-bold mb-0 text-info">{{totalVat}} <span class="fs-6 text-secondary">RWF</span></h3>
+        </div>
+    </div>
+</div>

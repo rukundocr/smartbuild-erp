@@ -1,0 +1,110 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">Create New Invoice</h2>
+        <a href="/invoices" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <form action="/invoices/create" method="POST">
+        <div class="card bg-dark border-secondary p-4 mb-4 shadow">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="text-secondary small mb-1">Select Project</label>
+                    <select name="projectId" class="form-select bg-black text-white border-secondary" required onchange="autoFillClient(this)">
+                        <option value="" disabled selected>Choose Project...</option>
+                        {{#each projects}}
+                        <option value="{{this._id}}" data-client="{{this.clientName}}">{{this.projectName}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="text-secondary small mb-1">Client Name</label>
+                    <input type="text" name="clientName" id="clientInput" class="form-control bg-black text-white border-secondary" required placeholder="Enter Client Name">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="text-secondary small mb-1">Site Location</label>
+                    <input type="text" name="siteLocation" class="form-control bg-black text-white border-secondary" required placeholder="e.g. Kigali, Nyarugenge">
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary shadow mb-4">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr class="text-secondary small">
+                            <th width="5%">#</th>
+                            <th width="35%">ITEM NAME</th>
+                            <th width="15%">UNIT</th>
+                            <th width="10%">QTY</th>
+                            <th width="15%">PRICE</th>
+                            <th width="20%">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceItemsBody">
+                        <tr>
+                            <td class="pt-3">1</td>
+                            <td><input type="text" name="items[0][itemName]" class="form-control form-control-sm" required></td>
+                            <td><input type="text" name="items[0][unit]" class="form-control form-control-sm"></td>
+                            <td><input type="number" name="items[0][qty]" class="form-control form-control-sm qty-input" required></td>
+                            <td><input type="number" name="items[0][unitPrice]" class="form-control form-control-sm price-input" required></td>
+                            <td class="line-total fw-bold text-info pt-3">0 RWF</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer border-secondary d-flex justify-content-between bg-black bg-opacity-50">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">+ Add Row</button>
+                <div class="text-end text-white">
+                    <p class="mb-1 small text-secondary">Subtotal: <span id="displaySubtotal">0</span> RWF</p>
+                    <p class="mb-1 small text-warning">VAT (18%): <span id="displayVAT">0</span> RWF</p>
+                    <h4 class="fw-bold mb-0">Total: <span id="displayTotal" class="text-success">0</span> RWF</h4>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-danger w-100 fw-bold py-3 shadow">SAVE INVOICE</button>
+    </form>
+</div>
+
+<script>
+    let itemCount = 1;
+
+    // Automatically fill Client Name based on Project selection
+    function autoFillClient(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const clientName = selectedOption.getAttribute('data-client');
+        if (clientName) {
+            document.getElementById('clientInput').value = clientName;
+        }
+    }
+
+    function addRow() {
+        const tbody = document.getElementById('invoiceItemsBody');
+        const row = `<tr>
+            <td class="pt-3">${itemCount + 1}</td>
+            <td><input type="text" name="items[${itemCount}][itemName]" class="form-control form-control-sm" required></td>
+            <td><input type="text" name="items[${itemCount}][unit]" class="form-control form-control-sm"></td>
+            <td><input type="number" name="items[${itemCount}][qty]" class="form-control form-control-sm qty-input" required></td>
+            <td><input type="number" name="items[${itemCount}][unitPrice]" class="form-control form-control-sm price-input" required></td>
+            <td class="line-total fw-bold text-info pt-3">0 RWF</td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+        itemCount++;
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
+            let subtotal = 0;
+            document.querySelectorAll('#invoiceItemsBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                const total = qty * price;
+                subtotal += total;
+                row.querySelector('.line-total').innerText = total.toLocaleString() + ' RWF';
+            });
+            const vat = subtotal * 0.18;
+            document.getElementById('displaySubtotal').innerText = subtotal.toLocaleString();
+            document.getElementById('displayVAT').innerText = vat.toLocaleString();
+            document.getElementById('displayTotal').innerText = (subtotal + vat).toLocaleString();
+        }
+    });
+</script>

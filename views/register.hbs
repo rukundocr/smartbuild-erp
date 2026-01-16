@@ -1,0 +1,37 @@
+<div class="card p-4 shadow-lg" style="width: 100%; max-width: 450px; border-top: 4px solid #198754;">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Create Account</h2>
+        <p class="text-secondary small">Register a new Admin or Staff user</p>
+    </div>
+    
+    <form action="/auth/register" method="POST">
+        <div class="mb-3">
+            <label class="form-label small text-secondary">Full Name</label>
+            <input type="text" name="name" class="form-control" placeholder="Enter full name" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small text-secondary">Email Address</label>
+            <input type="email" name="email" class="form-control" placeholder="email@smartbuild.rw" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small text-secondary">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label small text-secondary">System Role</label>
+            <select name="role" class="form-select">
+                <option value="staff">Staff (Limited Access)</option>
+                <option value="admin">Admin (Full Access)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 fw-bold py-2 mb-3">REGISTER USER</button>
+        
+        <div class="text-center">
+            <p class="small text-secondary mb-0">Already have an account? <a href="/auth/login" class="text-primary text-decoration-none">Login here</a></p>
+        </div>
+    </form>
+</div>

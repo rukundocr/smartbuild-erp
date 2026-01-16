@@ -1,0 +1,112 @@
+<div class="container-fluid">
+    <h2 class="text-white fw-bold mb-4">Edit Invoice: {{invoice.invoiceNumber}}</h2>
+
+    <form action="/invoices/update/{{invoice._id}}" method="POST">
+        <div class="card bg-dark border-secondary p-4 mb-4 shadow">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="text-secondary small">Client Name</label>
+                    <input type="text" name="clientName" class="form-control" value="{{invoice.clientName}}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="text-secondary small">Site Location</label>
+                    <input type="text" name="siteLocation" class="form-control" value="{{invoice.siteLocation}}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary shadow">
+            <table class="table table-dark mb-0">
+                <thead>
+                    <tr class="text-secondary small">
+                        <th>ITEM NAME</th>
+                        <th>SPECS</th>
+                        <th width="80">UNIT</th>
+                        <th width="80">QTY</th>
+                        <th width="150">PRICE</th>
+                        <th>TOTAL</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceItemsBody">
+                    {{#each invoice.items}}
+                    <tr>
+                        <td><input type="text" name="items[{{@index}}][itemName]" class="form-control form-control-sm" value="{{this.itemName}}" required></td>
+                        <td><input type="text" name="items[{{@index}}][specs]" class="form-control form-control-sm" value="{{this.specs}}"></td>
+                        <td><input type="text" name="items[{{@index}}][unit]" class="form-control form-control-sm" value="{{this.unit}}"></td>
+                        <td><input type="number" name="items[{{@index}}][qty]" class="form-control form-control-sm qty-input" value="{{this.qty}}" required></td>
+                        <td><input type="number" name="items[{{@index}}][unitPrice]" class="form-control form-control-sm price-input" value="{{this.unitPrice}}" required></td>
+                        <td class="line-total fw-bold text-info">{{formatCurrency this.totalPrice}}</td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); calculateTotals();"><i class="fas fa-times"></i></button></td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-primary" onclick="addRow()">+ Add Item</button>
+                <div class="text-end text-white">
+                    Subtotal: <span id="displaySubtotal">{{formatCurrency invoice.subtotal}}</span><br>
+                    VAT (18%): <span id="displayVAT" class="text-warning">{{formatCurrency invoice.vatAmount}}</span><br>
+                    <h4 class="fw-bold mt-2">Total: <span id="displayTotal">{{formatCurrency invoice.grandTotal}}</span></h4>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-warning w-100 mt-4 fw-bold py-3">SAVE CHANGES</button>
+    </form>
+</div>
+
+<script>
+    // Initialize itemCount based on how many rows already exist in the edit table
+    let itemCount = {{invoice.items.length}};
+
+    function addRow() {
+        const tbody = document.getElementById('invoiceItemsBody');
+        const row = `
+            <tr>
+                <td><input type="text" name="items[${itemCount}][itemName]" class="form-control form-control-sm" required></td>
+                <td><input type="text" name="items[${itemCount}][specs]" class="form-control form-control-sm"></td>
+                <td><input type="text" name="items[${itemCount}][unit]" class="form-control form-control-sm"></td>
+                <td><input type="number" name="items[${itemCount}][qty]" class="form-control form-control-sm qty-input" required></td>
+                <td><input type="number" name="items[${itemCount}][unitPrice]" class="form-control form-control-sm price-input" required></td>
+                <td class="line-total fw-bold text-info">0 RWF</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); calculateTotals();">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+        itemCount++; // Increment so the next added item gets a unique ID
+    }
+
+    // Listen for changes in Qty or Price to update totals live
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
+            calculateTotals();
+        }
+    });
+
+    function calculateTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('#invoiceItemsBody tr').forEach(row => {
+            const qty = row.querySelector('.qty-input').value || 0;
+            const price = row.querySelector('.price-input').value || 0;
+            const total = qty * price;
+            subtotal += total;
+            
+            // Format the line total display
+            const lineTotalDisplay = row.querySelector('.line-total');
+            if(lineTotalDisplay) {
+                lineTotalDisplay.innerText = total.toLocaleString() + ' RWF';
+            }
+        });
+
+        const vat = subtotal * 0.18;
+        const grand = subtotal + vat;
+
+        // Update the summary displays at the bottom
+        document.getElementById('displaySubtotal').innerText = subtotal.toLocaleString() + ' RWF';
+        document.getElementById('displayVAT').innerText = vat.toLocaleString() + ' RWF';
+        document.getElementById('displayTotal').innerText = grand.toLocaleString() + ' RWF';
+    }
+</script>

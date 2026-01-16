@@ -1,0 +1,230 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-white mb-1">Daily Expenses</h2>
+        <h5 class="text-info fw-bold" id="totalDisplay">Total: {{formatCurrency totalAmount}}</h5>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/expenses/download{{#if selectedProject}}?projectId={{selectedProject}}{{/if}}" class="btn btn-outline-light btn-sm fw-bold shadow-sm">
+            <i class="fas fa-file-pdf me-1"></i> EXPORT PDF
+        </a>
+        <button class="btn btn-danger btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#expenseModal">
+            <i class="fas fa-plus-circle me-1"></i> RECORD NEW EXPENSE
+        </button>
+    </div>
+</div>
+
+<div class="card p-3 border-secondary bg-dark mb-4 shadow-sm">
+    <form action="/expenses" method="GET">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-9">
+                <label class="small text-secondary mb-1">Filter by Project Site</label>
+                <select name="projectId" id="projectSelect" class="form-select bg-black border-secondary text-white" onchange="this.form.submit()">
+                    <option value="">All Projects</option>
+                    {{#each projects}}
+                    <option value="{{this._id}}" {{#if (eq this._id ../selectedProject)}}selected{{/if}}>
+                        {{this.projectName}}
+                    </option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <a href="/expenses" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="d-block d-md-none">
+    {{#each expenses}}
+    <div class="card border-secondary bg-dark mb-3 shadow">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="badge bg-primary">{{this.projectId.projectName}}</span>
+                <span class="text-secondary small">{{formatDate this.date}}</span>
+            </div>
+            <h6 class="text-white fw-bold mb-1">{{this.name}}</h6>
+            <p class="text-info small font-monospace mb-2">{{this.recipientPhone}}</p>
+            <p class="text-muted small mb-3 border-start border-primary ps-2">{{this.reason}}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="text-danger fw-bold mb-0">{{formatCurrency this.amount}}</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-warning border-0" data-bs-toggle="modal" data-bs-target="#editExpense{{this._id}}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <form action="/expenses/delete/{{this._id}}" method="POST" class="d-inline" onsubmit="return confirm('Delete record?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <p class="text-center text-secondary py-4">No records found.</p>
+    {{/each}}
+</div>
+
+<div class="card border-secondary bg-dark d-none d-md-block shadow">
+    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+        <table class="table table-dark table-hover mb-0" id="expensesTable">
+            <thead class="sticky-top bg-dark">
+                <tr class="text-secondary small border-bottom border-secondary">
+                    <th class="py-3">DATE</th>
+                    <th class="py-3">PROJECT</th>
+                    <th class="py-3">DESCRIPTION</th>
+                    <th class="py-3">RECIPIENT</th>
+                    <th class="py-3">PHONE</th>
+                    <th class="py-3">AMOUNT</th>
+                    <th class="py-3 text-end">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each expenses}}
+                <tr class="align-middle border-bottom border-secondary">
+                    <td class="small text-secondary">{{formatDate this.date}}</td>
+                    <td><span class="text-primary fw-bold">{{this.projectId.projectName}}</span></td>
+                    <td class="small">{{this.reason}} <br><span class="text-muted x-small">({{this.mode}})</span></td>
+                    <td class="fw-bold">{{this.name}}</td>
+                    <td class="text-info font-monospace">{{this.recipientPhone}}</td>
+                    <td class="text-danger fw-bold">{{formatCurrency this.amount}}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-warning border-0" data-bs-toggle="modal" data-bs-target="#editExpense{{this._id}}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form action="/expenses/delete/{{this._id}}" method="POST" class="d-inline" onsubmit="return confirm('Delete record?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{#if pagination.totalPages}}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-5">
+    <span class="small text-secondary">PAGE {{pagination.currentPage}} / {{pagination.totalPages}}</span>
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            {{#if pagination.hasPrev}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.prevPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Prev</a>
+            </li>
+            {{/if}}
+            
+            <li class="page-item active"><span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span></li>
+            
+            {{#if pagination.hasNext}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.nextPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Next</a>
+            </li>
+            {{/if}}
+        </ul>
+    </nav>
+</div>
+{{/if}}
+
+<div class="modal fade" id="expenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-danger">New Expense</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/expenses" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Project</label>
+                        <select name="projectId" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="" disabled selected>Select...</option>
+                            {{#each projects}}
+                            <option value="{{this._id}}">{{this.projectName}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Amount (RWF)</label>
+                            <input type="number" name="amount" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Mode</label>
+                            <select name="mode" class="form-select bg-dark text-white border-secondary">
+                                <option value="Mobile Money">Mobile Money</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Recipient Name</label>
+                            <input type="text" name="name" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Phone</label>
+                            <input type="text" name="recipientPhone" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Reason</label>
+                        <textarea name="reason" class="form-control bg-dark text-white border-secondary" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-danger w-100 fw-bold">SAVE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{#each expenses}}
+<div class="modal fade" id="editExpense{{this._id}}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-warning">Edit Expense</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/expenses/update/{{this._id}}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Project</label>
+                        <select name="projectId" class="form-select bg-dark text-white border-secondary">
+                            {{#each ../projects}}
+                            <option value="{{this._id}}" {{#if (eq this._id ../projectId._id)}}selected{{/if}}>{{this.projectName}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Amount</label>
+                            <input type="number" name="amount" class="form-control bg-dark text-white border-secondary" value="{{this.amount}}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Mode</label>
+                            <select name="mode" class="form-select bg-dark text-white border-secondary">
+                                <option value="Mobile Money" {{#if (eq this.mode 'Mobile Money')}}selected{{/if}}>Mobile Money</option>
+                                <option value="Cash" {{#if (eq this.mode 'Cash')}}selected{{/if}}>Cash</option>
+                                <option value="Bank Transfer" {{#if (eq this.mode 'Bank Transfer')}}selected{{/if}}>Bank Transfer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Reason</label>
+                        <textarea name="reason" class="form-control bg-dark text-white border-secondary" rows="2" required>{{this.reason}}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">UPDATE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{/each}}
