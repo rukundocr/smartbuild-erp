@@ -115,9 +115,7 @@
                 <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.prevPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Prev</a>
             </li>
             {{/if}}
-            
             <li class="page-item active"><span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span></li>
-            
             {{#if pagination.hasNext}}
             <li class="page-item">
                 <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.nextPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Next</a>
@@ -213,6 +211,16 @@
                                 <option value="Cash" {{#if (eq this.mode 'Cash')}}selected{{/if}}>Cash</option>
                                 <option value="Bank Transfer" {{#if (eq this.mode 'Bank Transfer')}}selected{{/if}}>Bank Transfer</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Recipient Name</label>
+                            <input type="text" name="name" class="form-control bg-dark text-white border-secondary" value="{{this.name}}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-secondary mb-1">Phone</label>
+                            <input type="text" name="recipientPhone" class="form-control bg-dark text-white border-secondary" value="{{this.recipientPhone}}" required>
                         </div>
                     </div>
                     <div class="mb-3">
