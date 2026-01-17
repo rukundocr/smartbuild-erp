@@ -3,21 +3,37 @@ const Project = require('../models/Project');
 const logAction = require('../utils/logger');
 const { generateExpensePDF } = require('../utils/pdfGenerator');
 
-// 1. Get All Expenses
+
+// 1. Get All Expenses (Updated with Date Range Filtering)
 exports.getExpenses = async (req, res) => {
     try {
-        const { projectId, page = 1 } = req.query;
-        const limit = 15; // Set rows per page
+        const { projectId, page = 1, startDate, endDate } = req.query;
+        const limit = 15; 
         const skip = (page - 1) * limit;
 
         let query = {};
+        
+        // Filter by Project if selected
         if (projectId) query.projectId = projectId;
 
-        // 1. Get total count for pagination logic
+        // Filter by Date Range if provided
+        if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                query.date.$gte = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.date.$lte = end;
+            }
+        }
+
+        // Get total count for pagination
         const totalExpenses = await Expense.countDocuments(query);
         const totalPages = Math.ceil(totalExpenses / limit);
 
-        // 2. Fetch the 15 records for current page
+        // Fetch paginated records
         const expenses = await Expense.find(query)
             .populate('projectId')
             .sort({ date: -1 })
@@ -27,15 +43,16 @@ exports.getExpenses = async (req, res) => {
 
         const projects = await Project.find().lean();
         
-        // Total for ONLY the 15 rows displayed or all? 
-        // Usually, users want the grand total for that filter:
-        const allFiltered = await Expense.find(query);
+        // Calculate Grand Total for the filtered results
+        const allFiltered = await Expense.find(query).select('amount');
         const totalAmount = allFiltered.reduce((sum, exp) => sum + exp.amount, 0);
 
         res.render('expenses', { 
             expenses, 
             projects, 
             selectedProject: projectId,
+            startDate, 
+            endDate,
             totalAmount,
             pagination: {
                 currentPage: parseInt(page),
@@ -47,9 +64,12 @@ exports.getExpenses = async (req, res) => {
             }
         });
     } catch (err) {
+        console.error("Error loading expenses:", err);
         res.status(500).send("Error loading expenses");
     }
 };
+
+// ... include your other exports like createExpense, updateExpense, deleteExpense here
 
 //  create new expense
 exports.createExpense = async (req, res) => {

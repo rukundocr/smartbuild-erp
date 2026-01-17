@@ -16,9 +16,9 @@
 <div class="card p-3 border-secondary bg-dark mb-4 shadow-sm">
     <form action="/expenses" method="GET">
         <div class="row g-2 align-items-end">
-            <div class="col-12 col-md-9">
-                <label class="small text-secondary mb-1">Filter by Project Site</label>
-                <select name="projectId" id="projectSelect" class="form-select bg-black border-secondary text-white" onchange="this.form.submit()">
+            <div class="col-12 col-md-4">
+                <label class="small text-secondary mb-1">Project Site</label>
+                <select name="projectId" class="form-select bg-black border-secondary text-white">
                     <option value="">All Projects</option>
                     {{#each projects}}
                     <option value="{{this._id}}" {{#if (eq this._id ../selectedProject)}}selected{{/if}}>
@@ -27,7 +27,16 @@
                     {{/each}}
                 </select>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-6 col-md-3">
+                <label class="small text-secondary mb-1">From Date</label>
+                <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="small text-secondary mb-1">To Date</label>
+                <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">FILTER</button>
                 <a href="/expenses" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
             </div>
         </div>
@@ -61,7 +70,7 @@
         </div>
     </div>
     {{else}}
-    <p class="text-center text-secondary py-4">No records found.</p>
+    <p class="text-center text-secondary py-4">No records found for this period.</p>
     {{/each}}
 </div>
 
@@ -73,9 +82,7 @@
                     <th class="py-3">DATE</th>
                     <th class="py-3">PROJECT</th>
                     <th class="py-3">DESCRIPTION</th>
-                    <th class="py-3">RECIPIENT</th>
-                    <th class="py-3">PHONE</th>
-                    <th class="py-3">AMOUNT</th>
+                    <th class="py-3">RECIPIENT</th> <th class="py-3">PHONE</th>     <th class="py-3 text-end">AMOUNT</th>
                     <th class="py-3 text-end">ACTIONS</th>
                 </tr>
             </thead>
@@ -85,9 +92,7 @@
                     <td class="small text-secondary">{{formatDate this.date}}</td>
                     <td><span class="text-primary fw-bold">{{this.projectId.projectName}}</span></td>
                     <td class="small">{{this.reason}} <br><span class="text-muted x-small">({{this.mode}})</span></td>
-                    <td class="fw-bold">{{this.name}}</td>
-                    <td class="text-info font-monospace">{{this.recipientPhone}}</td>
-                    <td class="text-danger fw-bold">{{formatCurrency this.amount}}</td>
+                    <td class="fw-bold">{{this.name}}</td> <td class="text-info font-monospace small">{{this.recipientPhone}}</td> <td class="text-danger fw-bold text-end">{{formatCurrency this.amount}}</td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-warning border-0" data-bs-toggle="modal" data-bs-target="#editExpense{{this._id}}">
                             <i class="fas fa-edit"></i>
@@ -112,13 +117,13 @@
         <ul class="pagination pagination-sm mb-0">
             {{#if pagination.hasPrev}}
             <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.prevPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Prev</a>
+                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.prevPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Prev</a>
             </li>
             {{/if}}
             <li class="page-item active"><span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span></li>
             {{#if pagination.hasNext}}
             <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.nextPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}">Next</a>
+                <a class="page-link bg-dark border-secondary text-white" href="/expenses?page={{pagination.nextPage}}{{#if selectedProject}}&projectId={{selectedProject}}{{/if}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Next</a>
             </li>
             {{/if}}
         </ul>
@@ -138,7 +143,7 @@
                     <div class="mb-3">
                         <label class="small text-secondary mb-1">Project</label>
                         <select name="projectId" class="form-select bg-dark text-white border-secondary" required>
-                            <option value="" disabled selected>Select...</option>
+                            <option value="" disabled selected>Select Project...</option>
                             {{#each projects}}
                             <option value="{{this._id}}">{{this.projectName}}</option>
                             {{/each}}
@@ -169,12 +174,12 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="small text-secondary mb-1">Reason</label>
+                        <label class="small text-secondary mb-1">Reason / Description</label>
                         <textarea name="reason" class="form-control bg-dark text-white border-secondary" rows="2" required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn btn-danger w-100 fw-bold">SAVE</button>
+                    <button type="submit" class="btn btn-danger w-100 fw-bold">SAVE EXPENSE</button>
                 </div>
             </form>
         </div>
@@ -186,7 +191,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark border-secondary text-white">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title fw-bold text-warning">Edit Expense</h5>
+                <h5 class="modal-title fw-bold text-warning">Edit Expense Record</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/expenses/update/{{this._id}}" method="POST">
@@ -229,7 +234,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn btn-warning w-100 fw-bold">UPDATE</button>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">UPDATE RECORD</button>
                 </div>
             </form>
         </div>
