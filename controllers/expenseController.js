@@ -76,9 +76,10 @@ exports.createExpense = async (req, res) => {
     try {
         const { name, recipientPhone, amount, reason, projectId, mode, date } = req.body;
         
+        // 1. Create the Expense record
         const newExpense = await Expense.create({
             name,
-            recipientPhone, // Saved here
+            recipientPhone,
             amount,
             reason,
             projectId,
@@ -87,16 +88,21 @@ exports.createExpense = async (req, res) => {
             createdBy: req.user._id
         });
 
+        // 2. Fetch project info to make the audit log more descriptive
+        const project = await Project.findById(projectId);
+        const projectName = project ? project.projectName : 'Unknown Project';
+
+        // 3. Record in Audit Log
+        // Structure: action, module, details
         await logAction(
-            req.user._id, 
-            'CREATE', 
-            'Expense', 
-            newExpense._id, 
-            `Sent ${amount} RWF to ${recipientPhone} (${name}) for ${reason}`
+            'CREATE_EXPENSE', 
+            'Expenses', 
+            `User ${req.user.name || 'Admin'} recorded ${amount} RWF for "${reason}" at ${projectName}. Recipient: ${name} (${recipientPhone}).`
         );
         
         res.redirect('/expenses');
     } catch (err) {
+        console.error("Error saving expense:", err);
         res.status(500).send("Error saving expense");
     }
 };

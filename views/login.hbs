@@ -1,22 +1,121 @@
-<div class="d-flex justify-content-center align-items-center" style="height: 90vh;">
-    <div class="card p-5" style="width: 400px; border-top: 4px solid #0d6efd;">
+<style>
+    body {
+        background-color: #0f0f0f; 
+    }
+    .login-card {
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+    }
+    .form-control {
+        height: 48px;
+        background-color: #1a1a1a !important; 
+        border: 1px solid #333 !important;
+        color: white !important;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .form-control:focus {
+        background-color: #222 !important;
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 8px rgba(13, 110, 253, 0.4);
+    }
+    .input-label {
+        color: #0dcaf0; 
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+    .password-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        cursor: pointer;
+        color: #0dcaf0; 
+        z-index: 100;
+        font-size: 1.1rem;
+    }
+    /* Sign Up Link Styling */
+    .signup-footer {
+        border-top: 1px solid #333;
+        margin-top: 25px;
+        padding-top: 20px;
+    }
+    .signup-link {
+        color: #0dcaf0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+    .signup-link:hover {
+        color: #fff;
+        text-decoration: underline;
+    }
+</style>
+
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card bg-dark login-card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
         <div class="text-center mb-4">
-            <h2 class="fw-bold text-primary">SMARTBUILD</h2>
-            <p class="text-secondary">Please sign in to continue</p>
+            <h3 class="fw-bold text-white mb-0">SMARTBUILD LTD</h3>
+            <div style="height: 3px; width: 40px; background: #0d6efd; margin: 8px auto; border-radius: 10px;"></div>
         </div>
-        <form action="/auth/login" method="POST">
-            <div class="mb-3">
-                <label class="form-label small text-secondary">Email Address</label>
-                <input type="email" name="email" class="form-control form-control-lg bg-black text-white" required>
+
+        {{#if error_msg}}
+        <div class="alert alert-danger border-0 bg-danger text-white small py-2 text-center mb-3">
+            {{error_msg}}
+        </div>
+        {{/if}}
+
+        <form action="/auth/login" method="POST" id="loginForm">
+            <div class="mb-3 text-start">
+                <label class="input-label mb-1">Username / Email</label>
+                <input type="text" name="email" class="form-control text-white" placeholder="your@email.com" required autofocus>
             </div>
-            <div class="mb-3">
-                <label class="form-label small text-secondary">Password</label>
-                <input type="password" name="password" class="form-control form-control-lg bg-black text-white" required>
+            
+            <div class="mb-4 text-start">
+                <label class="input-label mb-1">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="passwordField" class="form-control text-white" placeholder="••••••••" required>
+                    <i class="fas fa-eye toggle-password" id="toggleIcon"></i>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mt-3">LOGIN</button>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-3" id="loginBtn">
+                <span id="btnText">SIGN IN TO WORKSPACE</span>
+                <span id="btnLoader" class="d-none">
+                    <span class="spinner-border spinner-border-sm me-2"></span> CHECKING...
+                </span>
+            </button>
         </form>
-        <div class="mt-4 text-center">
-            <a href="/auth/register" class="text-secondary small text-decoration-none">Create an account</a>
+
+        <div class="signup-footer text-center">
+            <p class="text-secondary small mb-0">
+                Don't have an account? 
+                <a href="/auth/register" class="signup-link ms-1">Create Account</a>
+            </p>
         </div>
     </div>
 </div>
+
+<script>
+    // Toggle Password Logic
+    const passwordField = document.getElementById('passwordField');
+    const toggleIcon = document.getElementById('toggleIcon');
+    toggleIcon.addEventListener('click', function () {
+        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+
+    // Loading Logic
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        document.getElementById('loginBtn').disabled = true; 
+        document.getElementById('btnText').classList.add('d-none');
+        document.getElementById('btnLoader').classList.remove('d-none');
+    });
+</script>

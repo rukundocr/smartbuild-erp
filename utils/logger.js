@@ -1,17 +1,16 @@
 const AuditLog = require('../models/AuditLog');
 
-const logAction = async (userId, action, collection, targetId, details = '') => {
+exports.logAction = async (userId, action, module, resourceId, details) => {
     try {
         await AuditLog.create({
-            user: userId,
-            action: action,
-            targetCollection: collection,
-            targetId: targetId,
-            details: details
+            createdBy: userId, // Ensure your Model has this field
+            action,
+            module,
+            resourceId, // Ensure your Model has this field
+            details,
+            timestamp: new Date()
         });
     } catch (err) {
-        console.error('Audit Log Error:', err);
+        console.error("Logging failed:", err);
     }
 };
-
-module.exports = logAction;

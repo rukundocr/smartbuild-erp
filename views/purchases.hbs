@@ -1,0 +1,169 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-white mb-1">RRA Import Purchases</h2>
+        <p class="text-secondary mb-0">Total VAT Input: <span class="text-info fw-bold">{{formatCurrency totals.vat}}</span></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/purchases/export?startDate={{startDate}}&endDate={{endDate}}" class="btn btn-outline-light btn-sm fw-bold shadow-sm">
+            <i class="fas fa-file-csv me-1"></i> EXPORT CSV
+        </a>
+        <button class="btn btn-primary btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            <i class="fas fa-file-import me-1"></i> IMPORT RRA CSV
+        </button>
+    </div>
+</div>
+
+<div class="card p-3 border-secondary bg-dark mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-9">
+            <form action="/purchases" method="GET" class="row g-2 align-items-end">
+                <div class="col-6 col-md-5">
+                    <label class="small text-secondary mb-1">From Date</label>
+                    <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
+                </div>
+                <div class="col-6 col-md-5">
+                    <label class="small text-secondary mb-1">To Date</label>
+                    <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">FILTER</button>
+                    <a href="/purchases" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="col-12 col-md-3">
+            <form action="/purchases/delete-all" method="POST" onsubmit="return confirm('CRITICAL: This will permanently delete ALL imported RRA records. Are you sure you want to proceed?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold py-2">
+                    <i class="fas fa-trash-alt me-1"></i> CLEAR ALL DATA
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 text-center shadow-sm">
+            <label class="small text-secondary">NET AMOUNT</label>
+            <h4 class="text-white fw-bold mb-0">{{formatCurrency totals.net}}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 text-center shadow-sm border-info">
+            <label class="small text-info">VAT (18%)</label>
+            <h4 class="text-info fw-bold mb-0">{{formatCurrency totals.vat}}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 text-center shadow-sm border-success">
+            <label class="small text-secondary">TOTAL WITH VAT</label>
+            <h4 class="text-success fw-bold mb-0">{{formatCurrency totals.total}}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="d-block d-md-none">
+    {{#each purchases}}
+    <div class="card border-secondary bg-dark mb-3 shadow">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="badge bg-secondary">TIN: {{this.supplierTIN}}</span>
+                <span class="text-secondary small">{{formatDate this.date}}</span>
+            </div>
+            <h6 class="text-white fw-bold mb-1">{{this.supplierName}}</h6>
+            <p class="text-warning small font-monospace mb-2">Ref: {{this.receiptNumber}}</p>
+            <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2">
+                <div>
+                    <div class="x-small text-secondary">VAT</div>
+                    <div class="text-info small fw-bold">{{formatCurrency this.vat}}</div>
+                </div>
+                <div class="text-end">
+                    <div class="x-small text-secondary">TOTAL</div>
+                    <div class="text-success fw-bold">{{formatCurrency this.totalAmount}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <p class="text-center text-secondary py-4">No RRA records found for this period.</p>
+    {{/each}}
+</div>
+
+<div class="card border-secondary bg-dark d-none d-md-block shadow">
+    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+        <table class="table table-dark table-hover mb-0">
+            <thead class="sticky-top bg-dark">
+                <tr class="text-secondary small border-bottom border-secondary">
+                    <th class="py-3 px-3">DATE</th>
+                    <th class="py-3">SUPPLIER</th>
+                    <th class="py-3">RECEIPT #</th>
+                    <th class="py-3 text-end">NET</th>
+                    <th class="py-3 text-end text-info">VAT</th>
+                    <th class="py-3 text-end px-3">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each purchases}}
+                <tr class="align-middle border-bottom border-secondary">
+                    <td class="small text-secondary px-3">{{formatDate this.date}}</td>
+                    <td>
+                        <div class="fw-bold text-white">{{this.supplierName}}</div>
+                        <div class="x-small text-muted">TIN: {{this.supplierTIN}}</div>
+                    </td>
+                    <td class="font-monospace small text-warning">{{this.receiptNumber}}</td>
+                    <td class="text-end">{{formatCurrency this.amountWithoutVAT}}</td>
+                    <td class="text-end text-info">{{formatCurrency this.vat}}</td>
+                    <td class="text-end fw-bold px-3 text-success">{{formatCurrency this.totalAmount}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{#if pagination.totalPages}}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-5">
+    <span class="small text-secondary">PAGE {{pagination.currentPage}} / {{pagination.totalPages}}</span>
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            {{#if pagination.hasPrev}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.prevPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Prev</a>
+            </li>
+            {{/if}}
+            
+            <li class="page-item active">
+                <span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span>
+            </li>
+
+            {{#if pagination.hasNext}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.nextPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Next</a>
+            </li>
+            {{/if}}
+        </ul>
+    </nav>
+</div>
+{{/if}}
+
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold">Import RRA Purchase Report</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/purchases/import" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <p class="small text-secondary">Select the <strong>CSV</strong> file exported from the RRA system.</p>
+                    <input type="file" name="file" class="form-control bg-black border-secondary text-white" accept=".csv" required>
+                    <div class="mt-2 x-small text-muted">Note: Duplicate receipt numbers are automatically skipped.</div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">START IMPORT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

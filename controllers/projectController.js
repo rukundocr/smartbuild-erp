@@ -1,6 +1,6 @@
 const Project = require('../models/Project');
 const Expense = require('../models/Expense');
-const logAction = require('../utils/logger'); // Import the helper
+const { logAction } = require('../utils/logger'); // Destructured import fix
 const InputInvoice = require('../models/InputInvoice');
 
 // 1. Dashboard Logic
@@ -22,38 +22,22 @@ exports.getDashboard = async (req, res) => {
             totalPurchases: totalPurchases.toLocaleString()
         });
     } catch (err) {
+        console.error("Dashboard Error:", err);
         res.status(500).send("Dashboard Error");
     }
 };
 
-// 2. Project List & Create Form
+// 2. Project List
 exports.getProjects = async (req, res) => {
-    const projects = await Project.find().sort({ createdAt: -1 }).lean();
-    res.render('projects', { projects });
-};
-
-// 3. Save Project
-exports.createProject = async (req, res) => {
     try {
-        const { projectName, clientName, contractAmount, status, description } = req.body;
-        await Project.create({
-            projectName,
-            clientName,
-            contractAmount,
-            status,
-            description,
-            createdBy: req.user._id // Links to the logged-in user
-        });
-        res.redirect('/projects');
+        const projects = await Project.find().sort({ createdAt: -1 }).lean();
+        res.render('projects', { projects });
     } catch (err) {
-        res.status(500).send("Error creating project");
+        res.status(500).send("Error loading projects");
     }
 };
 
-
-
-
-
+// 3. Save New Project
 exports.createProject = async (req, res) => {
     try {
         const { projectName, clientName, contractAmount, status, description } = req.body;
@@ -67,45 +51,71 @@ exports.createProject = async (req, res) => {
             createdBy: req.user._id
         });
 
-        // TRIGGER AUDIT LOG
+        // Audit Log
         await logAction(
             req.user._id, 
             'CREATE', 
             'Project', 
             newProject._id, 
-            `Created project: ${projectName}`
+            `Created project: ${projectName} for ${clientName}`
         );
 
         res.redirect('/projects');
     } catch (err) {
+        console.error("Create Error:", err);
         res.status(500).send("Error creating project");
     }
 };
 
-
-// 1. Update Project
+// 4. Update Project
 exports.updateProject = async (req, res) => {
     try {
         const { projectName, clientName, contractAmount, status, description } = req.body;
+        
         const project = await Project.findByIdAndUpdate(req.params.id, {
-            projectName, clientName, contractAmount, status, description
+            projectName, 
+            clientName, 
+            contractAmount, 
+            status, 
+            description
         }, { new: true });
 
-        await logAction(req.user._id, 'UPDATE', 'Project', project._id, `Updated project: ${projectName}`);
+        if (!project) return res.status(404).send("Project not found");
+
+        // Audit Log
+        await logAction(
+            req.user._id, 
+            'UPDATE', 
+            'Project', 
+            project._id, 
+            `Updated project: ${projectName} (Status: ${status})`
+        );
+        
         res.redirect('/projects');
     } catch (err) {
+        console.error("Update Error:", err);
         res.status(500).send("Error updating project");
     }
 };
 
-// 2. Delete Project
+// 5. Delete Project
 exports.deleteProject = async (req, res) => {
     try {
         const project = await Project.findByIdAndDelete(req.params.id);
         
-        await logAction(req.user._id, 'DELETE', 'Project', req.params.id, `Deleted project: ${project.projectName}`);
+        if (project) {
+            await logAction(
+                req.user._id, 
+                'DELETE', 
+                'Project', 
+                req.params.id, 
+                `Deleted project: ${project.projectName}`
+            );
+        }
+        
         res.redirect('/projects');
     } catch (err) {
+        console.error("Delete Error:", err);
         res.status(500).send("Error deleting project");
     }
 };

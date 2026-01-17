@@ -1,0 +1,108 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-white mb-1">System Audit Log</h2>
+        <p class="text-secondary mb-0 x-small uppercase tracking-wider">Security & Activity Tracking</p>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-dark border border-secondary text-secondary py-2 px-3">
+            <i class="fas fa-shield-alt me-1 text-info"></i> ACTIVE MONITORING
+        </span>
+    </div>
+</div>
+
+<div class="card p-3 border-secondary bg-dark mb-4 shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+        <form action="/audit" method="GET" class="flex-grow-1">
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-4">
+                    <label class="small text-secondary mb-1">From Date</label>
+                    <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="small text-secondary mb-1">To Date</label>
+                    <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">FILTER</button>
+                    <a href="/audit" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="border-md-start border-secondary ps-md-3">
+            <form action="/audit/clear" method="POST" onsubmit="return confirm('CRITICAL: This will permanently delete all activity logs. This action cannot be undone. Proceed?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold py-2">
+                    <i class="fas fa-trash-alt me-1"></i> CLEAR LOGS
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card border-secondary bg-dark shadow-lg overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead class="bg-secondary text-white">
+                <tr class="small border-bottom border-secondary">
+                    <th class="py-3 px-3">TIMESTAMP</th>
+                    <th class="py-3">USER</th>
+                    <th class="py-3">ACTION</th>
+                    <th class="py-3">MODULE</th>
+                    <th class="py-3 px-3">DETAILS</th>
+                </tr>
+            </thead>
+            <tbody class="bg-dark">
+                {{#each logs}}
+                <tr class="align-middle border-bottom border-secondary">
+                    <td class="small text-white-50 px-3">{{formatDate this.timestamp}}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.7rem;">
+                                {{#if this.createdBy.name}}{{substring this.createdBy.name 0 1}}{{else}}A{{/if}}
+                            </div>
+                            <span class="text-white fw-medium">{{#if this.createdBy.name}}{{this.createdBy.name}}{{else}}System/Admin{{/if}}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {{#if (eq this.action 'CLEAR_ALL')}}bg-danger{{else if (eq this.action 'DELETE')}}bg-warning text-dark{{else}}bg-info{{/if}} fw-bold">
+                            {{this.action}}
+                        </span>
+                    </td>
+                    <td class="text-info small fw-bold uppercase">{{this.module}}</td>
+                    <td class="text-white small px-3" style="max-width: 300px; white-space: normal;">
+                        {{this.details}}
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+                        <i class="fas fa-history fa-2x text-secondary mb-3"></i>
+                        <p class="text-secondary">No activity logs found for the selected period.</p>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{#if pagination.totalPages}}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-5">
+    <span class="small text-secondary">Showing logs {{pagination.currentPage}} of {{pagination.totalPages}}</span>
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            {{#if pagination.hasPrev}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/audit?page={{pagination.prevPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Prev</a>
+            </li>
+            {{/if}}
+            <li class="page-item active"><span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span></li>
+            {{#if pagination.hasNext}}
+            <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-white" href="/audit?page={{pagination.nextPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Next</a>
+            </li>
+            {{/if}}
+        </ul>
+    </nav>
+</div>
+{{/if}}
