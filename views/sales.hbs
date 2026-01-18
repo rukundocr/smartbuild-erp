@@ -1,0 +1,94 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-white">RRA Sales Imports</h2>
+    <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i class="fas fa-file-csv me-2"></i>UPLOAD RRA CSV
+    </button>
+</div>
+
+<div class="card p-3 border-secondary bg-dark bg-opacity-50 shadow-lg">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead>
+                <tr class="text-secondary small">
+                    <th>INVOICE DATE</th>
+                    <th>RECEIPT NUMBER</th>
+                    <th>CLIENT / TIN</th>
+                    <th>EXCL. VAT (RWF)</th>
+                    <th>VAT AMOUNT</th>
+                    <th class="text-end">PROJECT LINKING</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each sales}}
+                <tr class="align-middle" style="height: 85px;">
+                    <td class="text-white small">{{formatDate this.invoiceDate}}</td>
+                    <td class="text-info fw-bold">{{this.receiptNumber}}</td>
+                    <td>
+                        <div class="fw-bold text-white">{{this.buyerName}}</div>
+                        <div class="small text-secondary">TIN: {{this.buyerTIN}}</div>
+                    </td>
+                    <td class="fw-bold">{{formatCurrency this.totalAmountExclVAT}}</td>
+                    <td class="text-warning fw-bold">{{formatCurrency this.vatAmount}}</td>
+                    <td class="text-end">
+                        <form action="/rra-sales/link/{{this._id}}" method="POST" class="d-flex justify-content-end align-items-center">
+                            <select name="projectId" class="form-select form-select-sm fw-bold border-white" 
+                                style="width: 200px; background-color: #ffffff !important; color: #000000 !important; height: 38px;">
+                                <option value="" class="text-secondary">-- Select Project --</option>
+                                {{#each ../projects}}
+                                    <option value="{{this._id}}" {{#if (eq ../projectId._id this._id)}}selected{{/if}}>
+                                        {{this.projectName}}
+                                    </option>
+                                {{/each}}
+                            </select>
+                            
+                            <button type="submit" class="btn btn-sm btn-primary ms-2 shadow-sm" style="height: 38px;">
+                                <i class="fas fa-link"></i>
+                            </button>
+                        </form>
+
+                        {{#if this.projectId}}
+                        <div class="mt-1">
+                            <span class="badge bg-info text-dark fw-bold" style="font-size: 0.75rem;">
+                                <i class="fas fa-check me-1"></i> LINKED: {{this.projectId.projectName}}
+                            </span>
+                        </div>
+                        {{/if}}
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-secondary">
+                        <i class="fas fa-file-invoice-dollar fa-3x mb-3"></i><br>
+                        No RRA sales records found. Upload a CSV to begin.
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-primary">Import RRA Sales (CSV)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/rra-sales/import" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Select the CSV file from RRA Portal</label>
+                        <input type="file" name="rraCsv" class="form-control" accept=".csv" required>
+                    </div>
+                    <div class="p-2 border border-secondary rounded bg-black small text-info">
+                        <i class="fas fa-info-circle me-2"></i>Duplicated receipt numbers will be skipped automatically.
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">UPLOAD AND PROCESS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

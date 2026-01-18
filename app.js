@@ -141,6 +141,8 @@ app.use('/audit', auditRoutes);
 app.use('/auth', require('./routes/auth'));
 app.use('/purchases', require('./routes/purchases'));
 app.use('/expenses', require('./routes/expenses'));
+app.use('/rra-sales', require('./routes/rraSales'));
+
 
 // --- THE 404 CATCH-ALL MIDDLEWARE ---
 // This middleware triggers only if none of the routes above match the URL
