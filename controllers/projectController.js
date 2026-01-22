@@ -2,8 +2,6 @@ const Project = require('../models/Project');
 const Expense = require('../models/Expense');
 const { logAction } = require('../utils/logger'); // Destructured import fix
 const PurchaseValue = require('../models/Purchase');
-
-// 1. Dashboard Logic
 exports.getDashboard = async (req, res) => {
     try {
         const projects = await Project.find().lean();
@@ -12,21 +10,27 @@ exports.getDashboard = async (req, res) => {
 
         const totalProjectValue = projects.reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
         const totalExpenses = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        
+        // --- CALCULATE PURCHASE TOTALS ---
         const totalPurchases = purchases.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+        const totalPurchaseVAT = purchases.reduce((acc, curr) => acc + (curr.vat || 0), 0);
+        const totalPurchaseNet = purchases.reduce((acc, curr) => acc + (curr.amountWithoutVAT || 0), 0);
 
         res.render('dashboard', {
             title: 'Dashboard | SmartBuild',
             projectCount: projects.length,
             totalProjectValue: totalProjectValue.toLocaleString(),
             totalExpenses: totalExpenses.toLocaleString(),
-            totalPurchases: totalPurchases.toLocaleString()
+            totalPurchases: totalPurchases.toLocaleString(),
+            // Pass these new values to the view
+            totalPurchaseVAT: totalPurchaseVAT.toLocaleString(),
+            totalPurchaseNet: totalPurchaseNet.toLocaleString()
         });
     } catch (err) {
         console.error("Dashboard Error:", err);
         res.status(500).send("Dashboard Error");
     }
 };
-
 // 2. Project List
 exports.getProjects = async (req, res) => {
     try {
