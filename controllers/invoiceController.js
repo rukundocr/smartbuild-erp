@@ -20,7 +20,7 @@ exports.getInvoiceForm = (req, res) => {
     res.render('invoices/new');
 };
 
-// 3. Create Invoice
+// 3. Create Invoice with Sequential Numbering
 exports.createInvoice = async (req, res) => {
     try {
         const { projectId, clientName, siteLocation, items } = req.body;
@@ -33,9 +33,33 @@ exports.createInvoice = async (req, res) => {
             return { ...item, totalPrice: total };
         });
 
+        // --- SEQUENTIAL INVOICE NUMBER LOGIC ---
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const prefix = `INV-${year}/${month}/`;
+
+        // Find the latest invoice that starts with the current year/month prefix
+        const lastInvoice = await Invoice.findOne({ 
+            invoiceNumber: new RegExp(`^${prefix}`) 
+        }).sort({ createdAt: -1 });
+
+        let sequence = 1;
+        if (lastInvoice) {
+            // Extract the number after the last slash and add 1
+            const parts = lastInvoice.invoiceNumber.split('/');
+            const lastNum = parseInt(parts[parts.length - 1]);
+            sequence = lastNum + 1;
+        }
+
+        // Format sequence to be 3 digits (e.g., 001, 002)
+        const formattedSequence = String(sequence).padStart(3, '0');
+        const formattedInvoiceNumber = `${prefix}${formattedSequence}`;
+        // ---------------------------------------
+
         const vat = subtotal * 0.18;
         const newInvoice = new Invoice({
-            invoiceNumber: 'INV-' + Math.floor(100000 + Math.random() * 900000),
+            invoiceNumber: formattedInvoiceNumber,
             projectId,
             clientName,
             siteLocation,
@@ -48,10 +72,10 @@ exports.createInvoice = async (req, res) => {
         await newInvoice.save();
         res.redirect('/invoices');
     } catch (err) {
+        console.error("Invoice Error:", err);
         res.status(500).send(err.message);
     }
 };
-
 // 4. Get Edit Form (Matches router.get('/edit/:id'))
 exports.getEditInvoice = async (req, res) => {
     try {
@@ -80,16 +104,30 @@ exports.updateInvoice = async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 };
 
-// 6. Download PDF (Matches router.get('/pdf/:id'))
+// ... (keep other functions as they are)
+
+// 6. Download PDF (Updated to include populate)
 exports.downloadInvoicePDF = async (req, res) => {
     try {
-        const invoice = await Invoice.findById(req.params.id).lean();
+        // We add .populate('projectId') here so we can access the project name
+        const invoice = await Invoice.findById(req.params.id)
+            .populate('projectId') 
+            .lean();
+
+        if (!invoice) return res.status(404).send("Invoice not found");
+
         const pdfBuffer = generateInvoicePDF(invoice);
+        
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Invoice.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=Invoice-${invoice.invoiceNumber}.pdf`);
         res.send(Buffer.from(pdfBuffer));
-    } catch (err) { res.status(500).send("Error generating PDF"); }
+    } catch (err) { 
+        console.error(err);
+        res.status(500).send("Error generating PDF"); 
+    }
 };
+
+
 
 // 7. Delete
 exports.deleteInvoice = async (req, res) => {

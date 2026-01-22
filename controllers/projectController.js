@@ -1,18 +1,18 @@
 const Project = require('../models/Project');
 const Expense = require('../models/Expense');
 const { logAction } = require('../utils/logger'); // Destructured import fix
-const InputInvoice = require('../models/InputInvoice');
+const PurchaseValue = require('../models/Purchase');
 
 // 1. Dashboard Logic
 exports.getDashboard = async (req, res) => {
     try {
         const projects = await Project.find().lean();
         const expenses = await Expense.find().lean();
-        const inputs = await InputInvoice.find().lean();
+        const purchases = await PurchaseValue.find().lean();
 
         const totalProjectValue = projects.reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
         const totalExpenses = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-        const totalPurchases = inputs.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+        const totalPurchases = purchases.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
 
         res.render('dashboard', {
             title: 'Dashboard | SmartBuild',
