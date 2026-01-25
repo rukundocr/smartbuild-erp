@@ -1,14 +1,89 @@
-<div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="text-center">
-        <h1 class="display-1 fw-bold text-primary">404</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | SmartBuild Ltd</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #0f111a; /* Dark theme to match your system */
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .error-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1d29 0%, #0f111a 100%);
+        }
+
+        .error-card {
+            padding: 40px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .display-1 {
+            font-size: 8rem;
+            letter-spacing: -5px;
+            background: linear-gradient(to right, #0dcaf0, #007bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-outline-primary {
+            border-color: #0dcaf0;
+            color: #0dcaf0;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #0dcaf0;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(13, 202, 240, 0.4);
+        }
+
+        .brand-text {
+            color: #0dcaf0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="error-container">
+    <div class="text-center error-card">
+        <h1 class="display-1 fw-bold">404</h1>
+        
         <div style="height: 3px; width: 60px; background: #0dcaf0; margin: 15px auto; border-radius: 10px;"></div>
+        
         <h3 class="text-white fw-bold mb-3">PAGE NOT FOUND</h3>
+        
         <p class="text-secondary mb-4">
-            The resource you are looking for at <strong>SmartBuild Ltd</strong> <br> 
+            The resource you are looking for at <span class="brand-text">SmartBuild Ltd</span> <br> 
             might have been removed or is temporarily unavailable.
         </p>
-        <a href="/auth/login" class="btn btn-outline-primary px-4 fw-bold">
-            <i class="fas fa-home me-2"></i> Login to Acess the system
-        </a>
+        
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="/auth/login" class="btn btn-outline-primary px-4 py-2 fw-bold">
+                <i class="fas fa-sign-in-alt me-2"></i> LOGIN TO ACCESS SYSTEM
+            </a>
+            <a href="javascript:history.back()" class="btn btn-link text-secondary text-decoration-none small">
+                <i class="fas fa-arrow-left me-1"></i> Go Back
+            </a>
+        </div>
     </div>
 </div>
+
+</body>
+</html>

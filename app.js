@@ -148,7 +148,7 @@ app.use('/rra-sales', require('./routes/rraSales'));
 // This middleware triggers only if none of the routes above match the URL
 app.use((req, res, next) => {
     res.status(404).render('404', { 
-        layout: 'main', // or false if you don't want the sidebar/nav visible
+        layout: false, // or false if you don't want the sidebar/nav visible
         title: "Page Not Found | SmartBuild"
     });
 });
