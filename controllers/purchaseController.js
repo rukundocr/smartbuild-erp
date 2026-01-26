@@ -7,11 +7,18 @@ const { logAction } = require('../utils/logger');
 
 exports.getPurchases = async (req, res) => {
     try {
-        const { startDate, endDate, page = 1 } = req.query;
+        // ADDED: supplierTIN to query destructuring
+        const { startDate, endDate, supplierTIN, page = 1 } = req.query;
         const limit = 15;
         const skip = (page - 1) * limit;
 
         let query = {};
+        
+        // --- NEW: TIN FILTER LOGIC ---
+        if (supplierTIN) {
+            query.supplierTIN = { $regex: supplierTIN, $options: 'i' }; // Case-insensitive partial match
+        }
+
         if (startDate || endDate) {
             query.date = {};
             if (startDate) query.date.$gte = new Date(startDate);
@@ -22,7 +29,6 @@ exports.getPurchases = async (req, res) => {
             }
         }
 
-        // 1. Get Totals for the entire filter (not just the page)
         const allFiltered = await Purchase.find(query).select('amountWithoutVAT vat totalAmount');
         const totals = allFiltered.reduce((acc, p) => {
             acc.net += p.amountWithoutVAT;
@@ -31,7 +37,6 @@ exports.getPurchases = async (req, res) => {
             return acc;
         }, { net: 0, vat: 0, total: 0 });
 
-        // 2. Get Paginated Results
         const totalPurchases = await Purchase.countDocuments(query);
         const totalPages = Math.ceil(totalPurchases / limit);
 
@@ -46,6 +51,7 @@ exports.getPurchases = async (req, res) => {
             totals, 
             startDate, 
             endDate,
+            supplierTIN, // Pass back to view to keep input filled
             pagination: {
                 currentPage: parseInt(page),
                 totalPages,
@@ -103,8 +109,13 @@ exports.importPurchases = async (req, res) => {
 
 exports.exportPurchasesCSV = async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        // ADDED: supplierTIN to export query
+        const { startDate, endDate, supplierTIN } = req.query;
         let query = {};
+
+        if (supplierTIN) {
+            query.supplierTIN = { $regex: supplierTIN, $options: 'i' };
+        }
 
         if (startDate || endDate) {
             query.date = {};
@@ -118,7 +129,6 @@ exports.exportPurchasesCSV = async (req, res) => {
 
         const purchases = await Purchase.find(query).sort({ date: -1 }).lean();
 
-        // Define CSV Columns
         const fields = [
             { label: 'Date', value: (row) => row.date.toLocaleDateString() },
             { label: 'Supplier TIN', value: 'supplierTIN' },
@@ -141,7 +151,6 @@ exports.exportPurchasesCSV = async (req, res) => {
         res.status(500).send("Error exporting CSV");
     }
 };
-
 // Delete All Purchases
 
 

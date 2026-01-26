@@ -4,7 +4,8 @@
         <p class="text-secondary mb-0">Total VAT Input: <span class="text-info fw-bold">{{formatCurrency totals.vat}}</span></p>
     </div>
     <div class="d-flex gap-2">
-        <a href="/purchases/export?startDate={{startDate}}&endDate={{endDate}}" class="btn btn-outline-light btn-sm fw-bold shadow-sm">
+        {{!-- Updated Export Link to include TIN filter --}}
+        <a href="/purchases/export?startDate={{startDate}}&endDate={{endDate}}&supplierTIN={{supplierTIN}}" class="btn btn-outline-light btn-sm fw-bold shadow-sm">
             <i class="fas fa-file-csv me-1"></i> EXPORT CSV
         </a>
         <button class="btn btn-primary btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
@@ -17,15 +18,20 @@
     <div class="row g-2 align-items-end">
         <div class="col-12 col-md-9">
             <form action="/purchases" method="GET" class="row g-2 align-items-end">
-                <div class="col-6 col-md-5">
+                <div class="col-6 col-md-3">
                     <label class="small text-secondary mb-1">From Date</label>
                     <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
                 </div>
-                <div class="col-6 col-md-5">
+                <div class="col-6 col-md-3">
                     <label class="small text-secondary mb-1">To Date</label>
                     <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
                 </div>
-                <div class="col-12 col-md-2 d-flex gap-1">
+                {{!-- NEW: Supplier TIN Filter --}}
+                <div class="col-12 col-md-3">
+                    <label class="small text-secondary mb-1">Supplier TIN</label>
+                    <input type="text" name="supplierTIN" class="form-control bg-black border-secondary text-white" placeholder="Search TIN..." value="{{supplierTIN}}">
+                </div>
+                <div class="col-12 col-md-3 d-flex gap-1">
                     <button type="submit" class="btn btn-primary w-100 fw-bold">FILTER</button>
                     <a href="/purchases" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
                 </div>
@@ -34,7 +40,7 @@
         
         <div class="col-12 col-md-3">
             <form action="/purchases/delete-all" method="POST" onsubmit="return confirm('CRITICAL: This will permanently delete ALL imported RRA records. Are you sure you want to proceed?')">
-                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold py-2">
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold py-2 w-100">
                     <i class="fas fa-trash-alt me-1"></i> CLEAR ALL DATA
                 </button>
             </form>
@@ -63,6 +69,7 @@
     </div>
 </div>
 
+{{!-- Mobile View --}}
 <div class="d-block d-md-none">
     {{#each purchases}}
     <div class="card border-secondary bg-dark mb-3 shadow">
@@ -86,10 +93,11 @@
         </div>
     </div>
     {{else}}
-    <p class="text-center text-secondary py-4">No RRA records found for this period.</p>
+    <p class="text-center text-secondary py-4">No RRA records found for this criteria.</p>
     {{/each}}
 </div>
 
+{{!-- Desktop View --}}
 <div class="card border-secondary bg-dark d-none d-md-block shadow">
     <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
         <table class="table table-dark table-hover mb-0">
@@ -129,7 +137,7 @@
         <ul class="pagination pagination-sm mb-0">
             {{#if pagination.hasPrev}}
             <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.prevPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Prev</a>
+                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.prevPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}{{#if supplierTIN}}&supplierTIN={{supplierTIN}}{{/if}}">Prev</a>
             </li>
             {{/if}}
             
@@ -139,7 +147,7 @@
 
             {{#if pagination.hasNext}}
             <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.nextPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}">Next</a>
+                <a class="page-link bg-dark border-secondary text-white" href="/purchases?page={{pagination.nextPage}}{{#if startDate}}&startDate={{startDate}}{{/if}}{{#if endDate}}&endDate={{endDate}}{{/if}}{{#if supplierTIN}}&supplierTIN={{supplierTIN}}{{/if}}">Next</a>
             </li>
             {{/if}}
         </ul>
@@ -147,6 +155,7 @@
 </div>
 {{/if}}
 
+{{!-- Import Modal --}}
 <div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark border-secondary text-white">

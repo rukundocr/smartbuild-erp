@@ -156,8 +156,8 @@ app.use((req, res, next) => {
 // --- OPTIONAL: GLOBAL ERROR HANDLER (500) ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).render('error', { 
-        layout: 'main',
+    res.status(500).render('404', { 
+        layout: false,
         message: 'Something went wrong on our end.' 
     });
 });
