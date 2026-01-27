@@ -51,8 +51,8 @@
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card bg-dark border-secondary p-3 text-center shadow-sm">
-            <label class="small text-secondary">NET AMOUNT</label>
-            <h4 class="text-white fw-bold mb-0">{{formatCurrency totals.net}}</h4>
+            <label class="small text-warning">NET AMOUNT</label>
+            <h4 class="text-warning fw-bold mb-0">{{formatCurrency totals.net}}</h4>
         </div>
     </div>
     <div class="col-md-4">
@@ -63,7 +63,7 @@
     </div>
     <div class="col-md-4">
         <div class="card bg-dark border-secondary p-3 text-center shadow-sm border-success">
-            <label class="small text-secondary">TOTAL WITH VAT</label>
+            <label class="small text-success">TOTAL WITH VAT</label>
             <h4 class="text-success fw-bold mb-0">{{formatCurrency totals.total}}</h4>
         </div>
     </div>
@@ -105,6 +105,7 @@
                 <tr class="text-secondary small border-bottom border-secondary">
                     <th class="py-3 px-3">DATE</th>
                     <th class="py-3">SUPPLIER</th>
+                     <th class="py-3">TIN</th>
                     <th class="py-3">RECEIPT #</th>
                     <th class="py-3 text-end">NET</th>
                     <th class="py-3 text-end text-info">VAT</th>
@@ -115,10 +116,10 @@
                 {{#each purchases}}
                 <tr class="align-middle border-bottom border-secondary">
                     <td class="small text-secondary px-3">{{formatDate this.date}}</td>
-                    <td>
-                        <div class="fw-bold text-white">{{this.supplierName}}</div>
-                        <div class="x-small text-muted">TIN: {{this.supplierTIN}}</div>
-                    </td>
+                    
+                        <td class="fw-bold text-white">{{this.supplierName}}</td>
+                        <td class="x-small text-white">{{this.supplierTIN}}</td>
+                   
                     <td class="font-monospace small text-warning">{{this.receiptNumber}}</td>
                     <td class="text-end">{{formatCurrency this.amountWithoutVAT}}</td>
                     <td class="text-end text-info">{{formatCurrency this.vat}}</td>

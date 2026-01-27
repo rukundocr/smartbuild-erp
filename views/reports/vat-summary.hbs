@@ -1,0 +1,131 @@
+{{!-- Print Styles --}}
+<style>
+    @media print {
+        .btn, .navbar, .sidebar, .filter-section, .no-print {
+            display: none !important;
+        }
+        body {
+            background-color: white !important;
+            color: black !important;
+            padding: 20px;
+        }
+        .card {
+            border: 1px solid #dee2e6 !important;
+            background-color: white !important;
+            box-shadow: none !important;
+            color: black !important;
+        }
+        .text-white, .text-secondary, .text-info, .text-warning, .text-danger, .text-success {
+            color: black !important;
+        }
+        .report-header {
+            display: block !important;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+    }
+    .report-header { display: none; }
+</style>
+
+{{!-- Header for Print Only --}}
+<div class="report-header text-center">
+    <h1 class="fw-bold">VAT DECLARATION SUMMARY</h1>
+    <p>Generated on: {{formatDate (now)}}</p>
+    {{#if startDate}}<span>From: {{startDate}}</span>{{/if}} 
+    {{#if endDate}}<span>To: {{endDate}}</span>{{/if}}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div>
+        <h2 class="fw-bold text-white mb-1">VAT Declaration Summary</h2>
+        <p class="text-secondary mb-0">RRA Tax Compliance Report</p>
+    </div>
+    <button onclick="window.print()" class="btn btn-outline-light fw-bold shadow-sm">
+        <i class="fas fa-print me-1"></i> PRINT / SAVE PDF
+    </button>
+</div>
+
+{{!-- Date Filter (no-print) --}}
+<div class="card p-3 border-secondary bg-dark mb-4 shadow-sm filter-section no-print">
+    <form action="/reports/vat-summary" method="GET" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="small text-secondary mb-1">From Date</label>
+            <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
+        </div>
+        <div class="col-md-4">
+            <label class="small text-secondary mb-1">To Date</label>
+            <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
+        </div>
+        <div class="col-md-4 d-flex gap-1">
+            <button type="submit" class="btn btn-primary w-100 fw-bold">GENERATE REPORT</button>
+            <a href="/reports/vat-summary" class="btn btn-outline-secondary w-100 fw-bold">RESET</a>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4">
+    {{!-- VAT Output --}}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow">
+            <label class="small text-secondary d-block mb-1">TOTAL VAT OUTPUT (SALES)</label>
+            <h3 class="text-info fw-bold">{{formatCurrency totalOutput}}</h3>
+        </div>
+    </div>
+
+    {{!-- VAT Input --}}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow">
+            <label class="small text-secondary d-block mb-1">TOTAL VAT INPUT (PURCHASES)</label>
+            <h3 class="text-warning fw-bold">{{formatCurrency totalInput}}</h3>
+        </div>
+    </div>
+
+    {{!-- Net VAT Payable --}}
+    <div class="col-md-4">
+        <div class="card bg-dark p-4 h-100 text-center shadow border-2 {{#if (gt vatPayable 0)}}border-danger{{else}}border-success{{/if}}">
+            <label class="small text-secondary d-block mb-1">NET VAT PAYABLE / (CREDIT)</label>
+            <h3 class="{{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}} fw-bold">
+                {{formatCurrency vatPayable}}
+            </h3>
+            <div class="small mt-2 {{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}}">
+                {{#if (gt vatPayable 0)}}
+                    <strong>PAYABLE TO RRA</strong>
+                {{else}}
+                    <strong>VAT CREDIT TO CARRY FORWARD</strong>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Detailed Breakdown Table (Useful for Audit) --}}
+<div class="mt-5">
+    <h5 class="text-white fw-bold mb-3">Audit Breakdown</h5>
+    <div class="card border-secondary bg-dark">
+        <table class="table table-dark mb-0">
+            <thead>
+                <tr class="text-secondary small">
+                    <th>DESCRIPTION</th>
+                    <th class="text-end">AMOUNT (RWF)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total VAT Collected from Customers</td>
+                    <td class="text-end text-info">+ {{formatCurrency totalOutput}}</td>
+                </tr>
+                <tr>
+                    <td>Total VAT Paid to Suppliers</td>
+                    <td class="text-end text-warning">- {{formatCurrency totalInput}}</td>
+                </tr>
+                <tr class="border-top border-secondary">
+                    <td class="fw-bold">Final Declaration Result</td>
+                    <td class="text-end fw-bold {{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}}">
+                        {{formatCurrency vatPayable}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

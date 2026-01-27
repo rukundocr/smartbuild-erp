@@ -9,6 +9,7 @@ const path = require('path');
 const invoiceRoutes = require('./routes/invoices');
 const purchaseRoutes = require('./routes/purchases'); // 1. Add this near other route imports
 const auditRoutes = require('./routes/audit');
+const reportRoutes = require('./routes/reports');
 
 
 const flash = require('connect-flash');
@@ -65,6 +66,12 @@ app.engine('hbs', engine({
     },
     
     helpers: {
+        gt: (a, b) => a > b,
+
+        // You might also need toString for the project filters we added earlier
+        toString: (val) => val ? val.toString() : '',
+
+
         // NEW: Added substring helper for user initials
         substring: function (str, start, len) {
             if (str && typeof str === 'string') {
@@ -142,6 +149,7 @@ app.use('/auth', require('./routes/auth'));
 app.use('/purchases', require('./routes/purchases'));
 app.use('/expenses', require('./routes/expenses'));
 app.use('/rra-sales', require('./routes/rraSales'));
+app.use('/reports', reportRoutes);
 
 
 // --- THE 404 CATCH-ALL MIDDLEWARE ---
