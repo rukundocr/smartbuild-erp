@@ -132,19 +132,21 @@
             <a class="nav-link text-info" href="/reports/vat-summary"><i class="fas fa-chart-bar"></i> VAT Summary</a>
             <a class="nav-link" href="/audit"><i class="fas fa-history"></i> Audit Logs</a>
             
-            <div class="mt-auto pb-5">
+            
                    <div class="user-info-item">
-                <i class="fas fa-user-circle"></i>
                 <div class="user-details">
+                     <i class="fas fa-user-circle"></i>
                     <div class="small fw-bold">{{user.name}}</div>
-                    <div class="text-secondary" style="font-size: 0.7rem;">{{user.role}}</div>
-                </div>
-            </div>
-
-                <a class="nav-link text-danger" href="/auth/logout">
+                    <div class="text-warning">{{user.role}}</div>
+                    <a class="nav-link text-danger" href="/auth/logout">
                     <i class="fas fa-power-off"></i> Logout
                 </a>
+                </div>
+
             </div>
+
+             
+          
         </nav>
     </aside>
     {{/if}}
