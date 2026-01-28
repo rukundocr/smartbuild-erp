@@ -1,10 +1,9 @@
 const Expense = require('../models/Expense');
 const Project = require('../models/Project');
-const logAction = require('../utils/logger');
+const { logAction } = require('../utils/logger'); // Ensure destructured import
 const { generateExpensePDF } = require('../utils/pdfGenerator');
 
-
-// 1. Get All Expenses (Updated with Date Range Filtering)
+// 1. Get All Expenses
 exports.getExpenses = async (req, res) => {
     try {
         const { projectId, page = 1, startDate, endDate } = req.query;
@@ -12,16 +11,11 @@ exports.getExpenses = async (req, res) => {
         const skip = (page - 1) * limit;
 
         let query = {};
-        
-        // Filter by Project if selected
         if (projectId) query.projectId = projectId;
 
-        // Filter by Date Range if provided
         if (startDate || endDate) {
             query.date = {};
-            if (startDate) {
-                query.date.$gte = new Date(startDate);
-            }
+            if (startDate) query.date.$gte = new Date(startDate);
             if (endDate) {
                 const end = new Date(endDate);
                 end.setHours(23, 59, 59, 999);
@@ -29,11 +23,9 @@ exports.getExpenses = async (req, res) => {
             }
         }
 
-        // Get total count for pagination
         const totalExpenses = await Expense.countDocuments(query);
         const totalPages = Math.ceil(totalExpenses / limit);
 
-        // Fetch paginated records
         const expenses = await Expense.find(query)
             .populate('projectId')
             .sort({ date: -1 })
@@ -43,7 +35,6 @@ exports.getExpenses = async (req, res) => {
 
         const projects = await Project.find().lean();
         
-        // Calculate Grand Total for the filtered results
         const allFiltered = await Expense.find(query).select('amount');
         const totalAmount = allFiltered.reduce((sum, exp) => sum + exp.amount, 0);
 
@@ -69,14 +60,11 @@ exports.getExpenses = async (req, res) => {
     }
 };
 
-// ... include your other exports like createExpense, updateExpense, deleteExpense here
-
-//  create new expense
+// 2. Create new expense
 exports.createExpense = async (req, res) => {
     try {
         const { name, recipientPhone, amount, reason, projectId, mode, date } = req.body;
         
-        // 1. Create the Expense record
         const newExpense = await Expense.create({
             name,
             recipientPhone,
@@ -88,16 +76,16 @@ exports.createExpense = async (req, res) => {
             createdBy: req.user._id
         });
 
-        // 2. Fetch project info to make the audit log more descriptive
         const project = await Project.findById(projectId);
         const projectName = project ? project.projectName : 'Unknown Project';
 
-        // 3. Record in Audit Log
-        // Structure: action, module, details
+        // AUDIT LOG
         await logAction(
-            'CREATE_EXPENSE', 
-            'Expenses', 
-            `User ${req.user.name || 'Admin'} recorded ${amount} RWF for "${reason}" at ${projectName}. Recipient: ${name} (${recipientPhone}).`
+            req.user._id,
+            'CREATE',
+            'EXPENSES',
+            newExpense._id,
+            `Recorded ${amount} RWF for "${reason}" at ${projectName}. Recipient: ${name}.`
         );
         
         res.redirect('/expenses');
@@ -107,30 +95,30 @@ exports.createExpense = async (req, res) => {
     }
 };
 
-// 3. Delete Expense
-exports.deleteExpense = async (req, res) => {
-    try {
-        await Expense.findByIdAndDelete(req.params.id);
-        await logAction(req.user._id, 'DELETE', 'Expense', req.params.id, `Deleted an expense entry`);
-        res.redirect('/expenses');
-    } catch (err) {
-        res.status(500).send("Error deleting expense");
-    }
-};
-
-
-// MAKE SURE THIS IS PRESENT AND SPELLED CORRECTLY
+// 3. Update Expense
 exports.updateExpense = async (req, res) => {
     try {
         const { name, recipientPhone, amount, reason, projectId, mode } = req.body;
-        await Expense.findByIdAndUpdate(req.params.id, {
+        
+        const oldExpense = await Expense.findById(req.params.id);
+        const updatedExpense = await Expense.findByIdAndUpdate(req.params.id, {
             name, 
             recipientPhone, 
             amount, 
             reason, 
             projectId, 
             mode
-        });
+        }, { new: true });
+
+        // AUDIT LOG
+        await logAction(
+            req.user._id,
+            'UPDATE',
+            'EXPENSES',
+            req.params.id,
+            `Updated expense. Amount changed from ${oldExpense.amount} to ${amount} RWF. Reason: ${reason}`
+        );
+
         res.redirect('/expenses');
     } catch (err) {
         console.error(err);
@@ -138,25 +126,40 @@ exports.updateExpense = async (req, res) => {
     }
 };
 
-// Ensure deleteExpense is also exported
+// 4. Delete Expense
 exports.deleteExpense = async (req, res) => {
     try {
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) return res.redirect('/expenses');
+
+        const deletedAmount = expense.amount;
+        const deletedReason = expense.reason;
+
         await Expense.findByIdAndDelete(req.params.id);
+
+        // AUDIT LOG
+        await logAction(
+            req.user._id,
+            'DELETE',
+            'EXPENSES',
+            req.params.id,
+            `Deleted expense of ${deletedAmount} RWF (Reason: ${deletedReason})`
+        );
+
         res.redirect('/expenses');
     } catch (err) {
+        console.error(err);
         res.status(500).send("Error deleting expense");
     }
 };
 
-
-// Make sure this is exported correctly
+// 5. Download PDF
 exports.downloadPDF = async (req, res) => {
     try {
         const { projectId } = req.query;
         let query = {};
         if (projectId) query.projectId = projectId;
 
-        // Fetch data
         const expenses = await Expense.find(query).populate('projectId').lean();
         const projects = await Project.find().lean();
         
@@ -166,10 +169,17 @@ exports.downloadPDF = async (req, res) => {
             
         const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-        // Generate PDF using the utility we created in the previous step
+        // AUDIT LOG: Logging the report generation
+        await logAction(
+            req.user._id,
+            'EXPORT',
+            'EXPENSES',
+            projectId || 'ALL',
+            `Generated Expense PDF Report for ${selectedProjectName}`
+        );
+
         const pdfBuffer = generateExpensePDF(expenses, selectedProjectName, totalAmount);
 
-        // Send file to browser
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=SmartBuild_Report_${Date.now()}.pdf`);
         res.send(Buffer.from(pdfBuffer));

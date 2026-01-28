@@ -10,6 +10,7 @@ const invoiceRoutes = require('./routes/invoices');
 const purchaseRoutes = require('./routes/purchases'); // 1. Add this near other route imports
 const auditRoutes = require('./routes/audit');
 const reportRoutes = require('./routes/reports');
+const loanRoutes = require('./routes/loanRoutes');
 
 
 const flash = require('connect-flash');
@@ -68,40 +69,55 @@ app.engine('hbs', engine({
     helpers: {
         gt: (a, b) => a > b,
 
-        // You might also need toString for the project filters we added earlier
+        // Used for matching IDs in project/user filters
         toString: (val) => val ? val.toString() : '',
 
-
-        // NEW: Added substring helper for user initials
+        // Added substring helper for user initials (e.g., "John" -> "J")
         substring: function (str, start, len) {
             if (str && typeof str === 'string') {
                 return str.substring(start, len);
             }
             return '';
         },
-        // IMPROVED: Added null-checks to prevent crashes if a field is empty
+
+        // Improved equality check
         eq: function (a, b) {
             if (a === undefined || b === undefined || a === null || b === null) return false;
             return a.toString() === b.toString();
         },
+
         formatCurrency: function (n) {
             if (!n) return '0 RWF';
             return new Intl.NumberFormat('en-RW').format(n) + ' RWF';
         },
+
         formatDate: function (date) {
             if (!date) return "";
             return new Intl.DateTimeFormat('en-GB', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',
-                hour: '2-digit',      // Added time to formatDate for Audit Logs
+                hour: '2-digit',
                 minute: '2-digit'
             }).format(new Date(date));
+        },
+
+        // --- NEW LOAN HELPERS ---
+
+        // Calculates remaining balance: (Total - Paid)
+        subtract: function (a, b) {
+            const result = (parseFloat(a) || 0) - (parseFloat(b) || 0);
+            return new Intl.NumberFormat('en-RW').format(result) + ' RWF';
+        },
+
+        // Calculates percentage for progress bars (Paid / Total * 100)
+        percentage: function (partial, total) {
+            if (!total || total === 0) return 0;
+            const p = (parseFloat(partial) / parseFloat(total)) * 100;
+            return Math.min(100, p).toFixed(0);
         }
     }
 }));
-
-
 
 
 app.set('view engine', 'hbs');
@@ -150,6 +166,7 @@ app.use('/purchases', require('./routes/purchases'));
 app.use('/expenses', require('./routes/expenses'));
 app.use('/rra-sales', require('./routes/rraSales'));
 app.use('/reports', reportRoutes);
+app.use('/loans', loanRoutes);
 
 
 // --- THE 404 CATCH-ALL MIDDLEWARE ---

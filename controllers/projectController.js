@@ -1,7 +1,9 @@
 const Project = require('../models/Project');
 const Expense = require('../models/Expense');
-const { logAction } = require('../utils/logger'); // Destructured import fix
+const { logAction } = require('../utils/logger');
 const PurchaseValue = require('../models/Purchase');
+
+// 1. Dashboard Logic
 exports.getDashboard = async (req, res) => {
     try {
         const projects = await Project.find().lean();
@@ -11,7 +13,6 @@ exports.getDashboard = async (req, res) => {
         const totalProjectValue = projects.reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
         const totalExpenses = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
         
-        // --- CALCULATE PURCHASE TOTALS ---
         const totalPurchases = purchases.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
         const totalPurchaseVAT = purchases.reduce((acc, curr) => acc + (curr.vat || 0), 0);
         const totalPurchaseNet = purchases.reduce((acc, curr) => acc + (curr.amountWithoutVAT || 0), 0);
@@ -22,7 +23,6 @@ exports.getDashboard = async (req, res) => {
             totalProjectValue: totalProjectValue.toLocaleString(),
             totalExpenses: totalExpenses.toLocaleString(),
             totalPurchases: totalPurchases.toLocaleString(),
-            // Pass these new values to the view
             totalPurchaseVAT: totalPurchaseVAT.toLocaleString(),
             totalPurchaseNet: totalPurchaseNet.toLocaleString()
         });
@@ -31,6 +31,7 @@ exports.getDashboard = async (req, res) => {
         res.status(500).send("Dashboard Error");
     }
 };
+
 // 2. Project List
 exports.getProjects = async (req, res) => {
     try {
@@ -55,13 +56,13 @@ exports.createProject = async (req, res) => {
             createdBy: req.user._id
         });
 
-        // Audit Log
+        // SOLID AUDIT LOG
         await logAction(
             req.user._id, 
             'CREATE', 
-            'Project', 
+            'PROJECTS', 
             newProject._id, 
-            `Created project: ${projectName} for ${clientName}`
+            `Created new project "${projectName}" for client "${clientName}" with contract value of ${contractAmount} RWF.`
         );
 
         res.redirect('/projects');
@@ -76,6 +77,9 @@ exports.updateProject = async (req, res) => {
     try {
         const { projectName, clientName, contractAmount, status, description } = req.body;
         
+        // Fetch old data for comparison in log if needed
+        const oldProject = await Project.findById(req.params.id);
+        
         const project = await Project.findByIdAndUpdate(req.params.id, {
             projectName, 
             clientName, 
@@ -86,13 +90,13 @@ exports.updateProject = async (req, res) => {
 
         if (!project) return res.status(404).send("Project not found");
 
-        // Audit Log
+        // SOLID AUDIT LOG
         await logAction(
             req.user._id, 
             'UPDATE', 
-            'Project', 
+            'PROJECTS', 
             project._id, 
-            `Updated project: ${projectName} (Status: ${status})`
+            `Updated project "${projectName}". Status changed from ${oldProject.status} to ${status}. Amount: ${contractAmount} RWF.`
         );
         
         res.redirect('/projects');
@@ -105,15 +109,19 @@ exports.updateProject = async (req, res) => {
 // 5. Delete Project
 exports.deleteProject = async (req, res) => {
     try {
-        const project = await Project.findByIdAndDelete(req.params.id);
+        const project = await Project.findById(req.params.id);
         
         if (project) {
+            const pName = project.projectName;
+            await Project.findByIdAndDelete(req.params.id);
+
+            // SOLID AUDIT LOG
             await logAction(
                 req.user._id, 
                 'DELETE', 
-                'Project', 
+                'PROJECTS', 
                 req.params.id, 
-                `Deleted project: ${project.projectName}`
+                `Deleted project: "${pName}" and all associated metadata.`
             );
         }
         

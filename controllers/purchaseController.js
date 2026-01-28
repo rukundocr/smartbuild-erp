@@ -2,21 +2,18 @@ const Purchase = require('../models/Purchase');
 const csv = require('csv-parser');
 const fs = require('fs');
 const { Parser } = require('json2csv');
-
 const { logAction } = require('../utils/logger');
 
+// 1. Get All Purchases
 exports.getPurchases = async (req, res) => {
     try {
-        // ADDED: supplierTIN to query destructuring
         const { startDate, endDate, supplierTIN, page = 1 } = req.query;
         const limit = 15;
         const skip = (page - 1) * limit;
 
         let query = {};
-        
-        // --- NEW: TIN FILTER LOGIC ---
         if (supplierTIN) {
-            query.supplierTIN = { $regex: supplierTIN, $options: 'i' }; // Case-insensitive partial match
+            query.supplierTIN = { $regex: supplierTIN, $options: 'i' };
         }
 
         if (startDate || endDate) {
@@ -51,7 +48,7 @@ exports.getPurchases = async (req, res) => {
             totals, 
             startDate, 
             endDate,
-            supplierTIN, // Pass back to view to keep input filled
+            supplierTIN,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages,
@@ -66,6 +63,7 @@ exports.getPurchases = async (req, res) => {
     }
 };
 
+// 2. Import Purchases from CSV
 exports.importPurchases = async (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
 
@@ -73,11 +71,9 @@ exports.importPurchases = async (req, res) => {
     fs.createReadStream(req.file.path)
         .pipe(csv())
         .on('data', (data) => {
-            // Parse Date DD/MM/YYYY to JS Date
             const dateParts = data['Receipt issue date'].split('/');
             const formattedDate = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0]);
 
-            // Clean numbers (remove commas)
             const netAmount = parseFloat(data['Amount without VAT'].replace(/,/g, ''));
             const vatAmount = parseFloat(data['VAT'].toString().replace(/,/g, ''));
 
@@ -94,28 +90,39 @@ exports.importPurchases = async (req, res) => {
         })
         .on('end', async () => {
             try {
-                // Use insertMany with ordered: false to skip duplicates based on unique receiptNumber
-                await Purchase.insertMany(results, { ordered: false });
+                const docs = await Purchase.insertMany(results, { ordered: false });
+                
+                // AUDIT LOG: Successful Import
+                await logAction(
+                    req.user._id,
+                    'IMPORT',
+                    'PURCHASES',
+                    'BULK_FILE',
+                    `Successfully imported ${docs.length} RRA purchase records from CSV.`
+                );
             } catch (err) {
-                console.log("Some duplicates were skipped");
+                // If some were inserted but others were duplicates, we still log what worked
+                const insertedCount = err.insertedDocs ? err.insertedDocs.length : 0;
+                await logAction(
+                    req.user._id,
+                    'IMPORT',
+                    'PURCHASES',
+                    'BULK_FILE',
+                    `Import completed. ${insertedCount} records added, duplicates were skipped.`
+                );
             }
-            fs.unlinkSync(req.file.path); // Delete temp file
+            fs.unlinkSync(req.file.path);
             res.redirect('/purchases');
         });
 };
 
-
-
-
+// 3. Export Purchases to CSV
 exports.exportPurchasesCSV = async (req, res) => {
     try {
-        // ADDED: supplierTIN to export query
         const { startDate, endDate, supplierTIN } = req.query;
         let query = {};
 
-        if (supplierTIN) {
-            query.supplierTIN = { $regex: supplierTIN, $options: 'i' };
-        }
+        if (supplierTIN) query.supplierTIN = { $regex: supplierTIN, $options: 'i' };
 
         if (startDate || endDate) {
             query.date = {};
@@ -129,6 +136,15 @@ exports.exportPurchasesCSV = async (req, res) => {
 
         const purchases = await Purchase.find(query).sort({ date: -1 }).lean();
 
+        // AUDIT LOG: Export Action
+        await logAction(
+            req.user._id,
+            'EXPORT',
+            'PURCHASES',
+            'CSV_FILE',
+            `Exported ${purchases.length} purchase records to CSV format.`
+        );
+
         const fields = [
             { label: 'Date', value: (row) => row.date.toLocaleDateString() },
             { label: 'Supplier TIN', value: 'supplierTIN' },
@@ -140,37 +156,35 @@ exports.exportPurchasesCSV = async (req, res) => {
         ];
 
         const json2csvParser = new Parser({ fields });
-        const csv = json2csvParser.parse(purchases);
+        const csvData = json2csvParser.parse(purchases);
 
         res.header('Content-Type', 'text/csv');
         res.attachment(`Purchases_Report_${new Date().toISOString().split('T')[0]}.csv`);
-        return res.send(csv);
+        return res.send(csvData);
 
     } catch (err) {
         console.error(err);
         res.status(500).send("Error exporting CSV");
     }
 };
-// Delete All Purchases
 
-
-// Delete All Purchases with Audit Logging
+// 4. Delete All Purchases
 exports.deleteAllPurchases = async (req, res) => {
     try {
-        // 1. Clear the database
+        const count = await Purchase.countDocuments({});
         await Purchase.deleteMany({});
         
-        // 2. Record the action in the Audit Log
+        // AUDIT LOG: Critical Action
         await logAction(
-            "CLEAR_ALL", 
-            "Purchases", 
-            "User performed a bulk delete of all imported RRA purchase records."
+            req.user._id,
+            'DELETE',
+            'PURCHASES',
+            'ALL_RECORDS',
+            `User performed a bulk delete of ${count} imported RRA purchase records.`
         );
         
-        // 3. Redirect back to the page
         res.redirect('/purchases');
     } catch (err) {
-        // 4. Proper error handling
         console.error("Error during bulk delete:", err);
         res.status(500).send("An error occurred while clearing the records.");
     }

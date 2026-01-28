@@ -12,18 +12,9 @@ exports.getSalesPage = async (req, res) => {
         const skip = (page - 1) * limit;
 
         let query = {};
+        if (buyerTIN) query.buyerTIN = { $regex: buyerTIN, $options: 'i' };
+        if (projectId && projectId !== "") query.projectId = projectId;
 
-        // Filter by Buyer TIN
-        if (buyerTIN) {
-            query.buyerTIN = { $regex: buyerTIN, $options: 'i' };
-        }
-
-        // Filter by Project
-        if (projectId && projectId !== "") {
-            query.projectId = projectId;
-        }
-
-        // Filter by Date Range
         if (startDate || endDate) {
             query.invoiceDate = {};
             if (startDate) query.invoiceDate.$gte = new Date(startDate);
@@ -34,7 +25,6 @@ exports.getSalesPage = async (req, res) => {
             }
         }
 
-        // Calculate Totals for the filtered results
         const allFiltered = await RRASale.find(query).select('totalAmountExclVAT vatAmount');
         const totals = allFiltered.reduce((acc, s) => {
             acc.net += s.totalAmountExclVAT || 0;
@@ -43,7 +33,6 @@ exports.getSalesPage = async (req, res) => {
             return acc;
         }, { net: 0, vat: 0, total: 0 });
 
-        // Get paginated results
         const totalSales = await RRASale.countDocuments(query);
         const totalPages = Math.ceil(totalSales / limit);
 
@@ -63,7 +52,7 @@ exports.getSalesPage = async (req, res) => {
             startDate,
             endDate,
             buyerTIN,
-            projectId, // Needed for keeping the dropdown selected in UI
+            projectId,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages,
@@ -92,7 +81,7 @@ exports.importCSVSales = async (req, res) => {
                 return parseFloat(val.toString().replace(/,/g, '').replace(/"/g, '')) || 0;
             };
 
-            let imported = 0;
+            let importedCount = 0;
             for (const row of results) {
                 try {
                     const receiptNo = row['Receipt Number'];
@@ -101,7 +90,6 @@ exports.importCSVSales = async (req, res) => {
                     const exists = await RRASale.findOne({ receiptNumber: receiptNo });
                     if (!exists) {
                         const d = row['Invoice Date'].split('/');
-                        // Expected format DD/MM/YYYY
                         const formattedDate = new Date(`${d[2]}-${d[1]}-${d[0]}`);
 
                         await RRASale.create({
@@ -114,12 +102,22 @@ exports.importCSVSales = async (req, res) => {
                             taxableSales: cleanNum(row['Taxble Sales']),
                             vatAmount: cleanNum(row['VAT'])
                         });
-                        imported++;
+                        importedCount++;
                     }
                 } catch (e) { 
                     console.error("Error parsing row during import:", e); 
                 }
             }
+
+            // SOLID AUDIT LOG
+            await logAction(
+                req.user._id,
+                'IMPORT',
+                'SALES',
+                'CSV_BATCH',
+                `Imported ${importedCount} RRA sales records from CSV file.`
+            );
+
             fs.unlinkSync(req.file.path);
             res.redirect('/rra-sales');
         });
@@ -144,6 +142,15 @@ exports.exportSalesCSV = async (req, res) => {
 
         const sales = await RRASale.find(query).populate('projectId').sort({ invoiceDate: -1 }).lean();
         
+        // SOLID AUDIT LOG
+        await logAction(
+            req.user._id,
+            'EXPORT',
+            'SALES',
+            'CSV_FILE',
+            `User exported ${sales.length} sales records to CSV.`
+        );
+
         const fields = [
             { label: 'Date', value: (row) => row.invoiceDate ? row.invoiceDate.toLocaleDateString() : '' },
             { label: 'Buyer TIN', value: 'buyerTIN' },
@@ -168,8 +175,18 @@ exports.exportSalesCSV = async (req, res) => {
 
 exports.deleteAllSales = async (req, res) => {
     try {
+        const count = await RRASale.countDocuments({});
         await RRASale.deleteMany({});
-        await logAction("CLEAR_ALL", "Sales", "Bulk delete of all imported RRA sales records.");
+        
+        // SOLID AUDIT LOG
+        await logAction(
+            req.user._id,
+            'DELETE',
+            'SALES',
+            'ALL_RECORDS',
+            `User performed a bulk delete of ${count} RRA sales records.`
+        );
+        
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Delete All Error:", err);
@@ -179,7 +196,17 @@ exports.deleteAllSales = async (req, res) => {
 
 exports.linkProject = async (req, res) => {
     try {
-        await RRASale.findByIdAndUpdate(req.params.id, { projectId: req.body.projectId });
+        const sale = await RRASale.findByIdAndUpdate(req.params.id, { projectId: req.body.projectId }, { new: true }).populate('projectId');
+        
+        // SOLID AUDIT LOG
+        await logAction(
+            req.user._id,
+            'UPDATE',
+            'SALES',
+            sale._id,
+            `Linked Sale Receipt #${sale.receiptNumber} to project: ${sale.projectId.projectName}`
+        );
+
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Linking Error:", err);

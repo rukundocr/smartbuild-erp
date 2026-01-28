@@ -1,15 +1,14 @@
-
-
 const mongoose = require('mongoose');
 
 const auditLogSchema = new mongoose.Schema({
-    action: { type: String, required: true },
-    module: { type: String, required: true },
-    details: { type: String },
-    // This MUST match the field name used in .populate('createdBy')
+    action: { type: String, required: true }, // e.g., "CREATE", "DELETE"
+    module: { type: String, required: true }, // e.g., "SALES", "PROJECTS"
+    details: { type: String },                // e.g., "Deleted Project: Villa A"
+    resourceId: { type: String },             // Added to store the ID of the document
     createdBy: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User' 
+        ref: 'User',
+        required: true 
     },
     timestamp: { type: Date, default: Date.now }
 });
