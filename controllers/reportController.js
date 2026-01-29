@@ -37,6 +37,9 @@ exports.getVATSummary = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error generating report");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Something went wrong on our end.' 
+        });
     }
 };

@@ -64,7 +64,11 @@ exports.getSalesPage = async (req, res) => {
         });
     } catch (err) {
         console.error("Error loading sales page:", err);
-        res.status(500).send("Error loading sales page");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error loading sales page.' 
+        });
+
     }
 };
 
@@ -169,7 +173,10 @@ exports.exportSalesCSV = async (req, res) => {
         res.send(csvData);
     } catch (err) {
         console.error("Export Error:", err);
-        res.status(500).send("Export failed");
+        res.status(500).render("500",{
+            layout:false,
+            message:"something went wrong on our end. Export failed"
+        });
     }
 };
 
@@ -190,7 +197,10 @@ exports.deleteAllSales = async (req, res) => {
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Delete All Error:", err);
-        res.status(500).send("Delete failed");
+        res.status(500).render("500",{
+            layout:false,
+            message:"Something went wrong while deleting the sales records"
+        });
     }
 };
 
@@ -210,6 +220,9 @@ exports.linkProject = async (req, res) => {
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Linking Error:", err);
-        res.status(500).send("Failed to link project");
+         res.status(500).render("500",{
+            layout:false,
+            message:"Linking project error. something went wrong to our ends"
+        });
     }
 };

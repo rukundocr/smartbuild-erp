@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Access Denied | SmartBuild Ltd</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #0f111a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .error-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #141424 0%, #0f111a 100%);
+        }
+
+        .error-card {
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(111, 66, 193, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .display-1 {
+            font-size: 8rem;
+            letter-spacing: -5px;
+            background: linear-gradient(to right, #6f42c1, #a155ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .access-msg {
+            color: #a155ff;
+            font-weight: 500;
+            background: rgba(111, 66, 193, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed rgba(161, 85, 255, 0.4);
+        }
+
+        .btn-purple {
+            background: #6f42c1;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-purple:hover {
+            background: #8250df;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="error-container">
+    <div class="text-center error-card">
+        <h1 class="display-1 fw-bold">403</h1>
+        
+        <div style="height: 3px; width: 60px; background: #6f42c1; margin: 15px auto; border-radius: 10px;"></div>
+        
+        <h3 class="text-white fw-bold mb-3">ACCESS RESTRICTED</h3>
+        
+        <p class="access-msg mb-4">
+            <i class="fas fa-user-shield me-2"></i> {{#if message}}{{message}}{{else}}You do not have the required permissions to view this resource.{{/if}}
+        </p>
+
+        <p class="text-secondary mb-4 small">
+            This area of <span class="text-white fw-bold">SmartBuild ERP</span> is reserved for <strong>Administrative Staff</strong> 
+            only. Please contact your supervisor if you believe this is an error.
+        </p>
+        
+        <div class="d-grid gap-2">
+            <a href="/" class="btn btn-purple px-4 py-2">
+                <i class="fas fa-arrow-left me-2"></i> RETURN TO SAFETY
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

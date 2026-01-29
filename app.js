@@ -150,17 +150,8 @@ app.use('/', require('./routes/projects')); // Dashboard at root
 // ... under your other routes
 app.use('/', require('./routes/expenses'));
 app.use('/invoices', invoiceRoutes);
-
-// ... other imports
-
-
-// ... other middleware
-app.use('/purchases', purchaseRoutes); // 2. Add this near your other app.use('/expenses', ...) lines
-
-// 2. Use the route (near app.use('/expenses', ...))
+app.use('/purchases', purchaseRoutes); 
 app.use('/audit', auditRoutes);
-
-// ... Your existing routes ...
 app.use('/auth', require('./routes/auth'));
 app.use('/purchases', require('./routes/purchases'));
 app.use('/expenses', require('./routes/expenses'));
@@ -168,8 +159,6 @@ app.use('/rra-sales', require('./routes/rraSales'));
 app.use('/reports', reportRoutes);
 app.use('/loans', loanRoutes);
 
-
-// --- THE 404 CATCH-ALL MIDDLEWARE ---
 // This middleware triggers only if none of the routes above match the URL
 app.use((req, res, next) => {
     res.status(404).render('404', { 
@@ -181,14 +170,10 @@ app.use((req, res, next) => {
 // --- OPTIONAL: GLOBAL ERROR HANDLER (500) ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).render('404', { 
+    res.status(500).render('500', { 
         layout: false,
         message: 'Something went wrong on our end.' 
     });
 });
-
-
-
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));
