@@ -54,6 +54,7 @@ app.use((req, res, next) => {
 
 
 // Engine 
+// Engine 
 app.engine('hbs', engine({
     extname: '.hbs',
     defaultLayout: 'main',
@@ -100,6 +101,26 @@ app.engine('hbs', engine({
                 hour: '2-digit',
                 minute: '2-digit'
             }).format(new Date(date));
+        },
+
+        /**
+         * NEW: Formats date specifically for HTML <input type="date">
+         * Converts Date to YYYY-MM-DD format
+         */
+        formatDateHTML: function (date) {
+            if (!date) return "";
+            try {
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return ""; // Check for invalid date
+                
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}`;
+            } catch (err) {
+                return "";
+            }
         },
 
         // --- NEW LOAN HELPERS ---

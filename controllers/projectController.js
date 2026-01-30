@@ -10,21 +10,47 @@ exports.getDashboard = async (req, res) => {
         const expenses = await Expense.find().lean();
         const purchases = await PurchaseValue.find().lean();
 
+        // 1. Basic Stats
         const totalProjectValue = projects.reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
         const totalExpenses = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-        
         const totalPurchases = purchases.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
         const totalPurchaseVAT = purchases.reduce((acc, curr) => acc + (curr.vat || 0), 0);
         const totalPurchaseNet = purchases.reduce((acc, curr) => acc + (curr.amountWithoutVAT || 0), 0);
 
+        // 2. Data for Budget Distribution (Top 5 Projects)
+        const budgetLabels = projects.slice(0, 5).map(p => p.projectName);
+        const budgetValues = projects.slice(0, 5).map(p => p.contractAmount || 0);
+
+        // 3. Data for Monthly Spending (Line Chart)
+        const monthlySpentMap = {};
+        
+        const sortedExpenses = expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        sortedExpenses.forEach(exp => {
+            if (exp.date) {
+                const dateObj = new Date(exp.date);
+                const monthYear = dateObj.toLocaleString('default', { month: 'short', year: '2-digit' });
+                monthlySpentMap[monthYear] = (monthlySpentMap[monthYear] || 0) + (exp.amount || 0);
+            }
+        });
+
+        const expenseLabels = Object.keys(monthlySpentMap).slice(-6); 
+        const expenseValues = expenseLabels.map(label => monthlySpentMap[label]);
+
         res.render('dashboard', {
             title: 'Dashboard | SmartBuild',
-            projectCount: projects.length,
             totalProjectValue: totalProjectValue.toLocaleString(),
             totalExpenses: totalExpenses.toLocaleString(),
             totalPurchases: totalPurchases.toLocaleString(),
             totalPurchaseVAT: totalPurchaseVAT.toLocaleString(),
-            totalPurchaseNet: totalPurchaseNet.toLocaleString()
+            totalPurchaseNet: totalPurchaseNet.toLocaleString(),
+            projectCount: projects.length,
+            chartData: JSON.stringify({
+                budgetLabels,
+                budgetValues,
+                expenseLabels,
+                expenseValues
+            })
         });
     } catch (err) {
         console.error("Dashboard Error:", err);
@@ -32,12 +58,65 @@ exports.getDashboard = async (req, res) => {
     }
 };
 
-// 2. Project List
+// 2. Project List with Enhanced Filtering
 exports.getProjects = async (req, res) => {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 }).lean();
-        res.render('projects', { projects });
+        const { search, status, projectId } = req.query;
+        let query = {};
+        
+        // Build Filter Query
+        if (projectId) {
+            query._id = projectId; // Direct selection from dropdown
+        } else {
+            if (search) query.projectName = { $regex: search, $options: 'i' };
+            if (status) query.status = status;
+        }
+
+        // Get list of ALL projects for the dropdown selector (unfiltered)
+        const allProjectNames = await Project.find({}, 'projectName').sort({ projectName: 1 }).lean();
+
+        const projectsRaw = await Project.find(query).sort({ createdAt: -1 }).lean();
+        
+        let companyTotalContract = 0;
+        let companyTotalSpent = 0;
+
+        const projects = await Promise.all(projectsRaw.map(async (project) => {
+            const expenses = await Expense.find({ projectId: project._id }).lean();
+            const totalSpent = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+            const remainingBalance = (project.contractAmount || 0) - totalSpent;
+            
+            const percentUsed = project.contractAmount > 0 
+                ? Math.min(Math.round((totalSpent / project.contractAmount) * 100), 100) 
+                : 0;
+
+            companyTotalContract += (project.contractAmount || 0);
+            companyTotalSpent += totalSpent;
+
+            return {
+                ...project,
+                totalSpent,
+                remainingBalance,
+                percentUsed,
+                isOverBudget: totalSpent > project.contractAmount,
+                statusColor: totalSpent > project.contractAmount ? 'danger' : (percentUsed > 85 ? 'warning' : 'success')
+            };
+        }));
+
+        res.render('projects', { 
+            projects, 
+            allProjectNames,
+            searchQuery: search,
+            selectedStatus: status,
+            selectedProjectId: projectId,
+            companyTotals: {
+                contract: companyTotalContract,
+                spent: companyTotalSpent,
+                balance: companyTotalContract - companyTotalSpent,
+                healthColor: (companyTotalContract - companyTotalSpent) < 0 ? 'danger' : 'info'
+            }
+        });
     } catch (err) {
+        console.error("Error loading projects:", err);
         res.status(500).send("Error loading projects");
     }
 };
@@ -45,29 +124,16 @@ exports.getProjects = async (req, res) => {
 // 3. Save New Project
 exports.createProject = async (req, res) => {
     try {
-        const { projectName, clientName, contractAmount, status, description } = req.body;
-        
+        const { projectName, clientName, contractAmount, status, description, startDate, deadline } = req.body;
         const newProject = await Project.create({
-            projectName,
-            clientName,
-            contractAmount,
-            status,
-            description,
+            projectName, clientName, contractAmount,
+            status: status || 'Active',
+            description, startDate, deadline,
             createdBy: req.user._id
         });
-
-        // SOLID AUDIT LOG
-        await logAction(
-            req.user._id, 
-            'CREATE', 
-            'PROJECTS', 
-            newProject._id, 
-            `Created new project "${projectName}" for client "${clientName}" with contract value of ${contractAmount} RWF.`
-        );
-
+        await logAction(req.user._id, 'CREATE', 'PROJECTS', newProject._id, `Created project "${projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-        console.error("Create Error:", err);
         res.status(500).send("Error creating project");
     }
 };
@@ -75,33 +141,10 @@ exports.createProject = async (req, res) => {
 // 4. Update Project
 exports.updateProject = async (req, res) => {
     try {
-        const { projectName, clientName, contractAmount, status, description } = req.body;
-        
-        // Fetch old data for comparison in log if needed
-        const oldProject = await Project.findById(req.params.id);
-        
-        const project = await Project.findByIdAndUpdate(req.params.id, {
-            projectName, 
-            clientName, 
-            contractAmount, 
-            status, 
-            description
-        }, { new: true });
-
-        if (!project) return res.status(404).send("Project not found");
-
-        // SOLID AUDIT LOG
-        await logAction(
-            req.user._id, 
-            'UPDATE', 
-            'PROJECTS', 
-            project._id, 
-            `Updated project "${projectName}". Status changed from ${oldProject.status} to ${status}. Amount: ${contractAmount} RWF.`
-        );
-        
+        const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        await logAction(req.user._id, 'UPDATE', 'PROJECTS', project._id, `Updated project "${project.projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-        console.error("Update Error:", err);
         res.status(500).send("Error updating project");
     }
 };
@@ -110,24 +153,12 @@ exports.updateProject = async (req, res) => {
 exports.deleteProject = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id);
-        
         if (project) {
-            const pName = project.projectName;
             await Project.findByIdAndDelete(req.params.id);
-
-            // SOLID AUDIT LOG
-            await logAction(
-                req.user._id, 
-                'DELETE', 
-                'PROJECTS', 
-                req.params.id, 
-                `Deleted project: "${pName}" and all associated metadata.`
-            );
+            await logAction(req.user._id, 'DELETE', 'PROJECTS', req.params.id, `Deleted project: "${project.projectName}"`);
         }
-        
         res.redirect('/projects');
     } catch (err) {
-        console.error("Delete Error:", err);
         res.status(500).send("Error deleting project");
     }
 };

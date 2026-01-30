@@ -188,3 +188,30 @@ exports.downloadPDF = async (req, res) => {
         res.status(500).send("Error generating PDF: " + err.message);
     }
 };
+
+exports.linkProject = async (req, res) => {
+    try {
+        const { projectId } = req.body;
+        const expense = await Expense.findByIdAndUpdate(
+            req.params.id, 
+            { projectId }, 
+            { new: true }
+        ).populate('projectId');
+        
+        if (!expense) return res.redirect('/expenses');
+
+        // SOLID AUDIT LOG
+        await logAction(
+            req.user._id,
+            'UPDATE',
+            'EXPENSES',
+            expense._id,
+            `Mapped expense (${expense.reason}) to project: ${expense.projectId ? expense.projectId.projectName : 'Unlinked'}`
+        );
+
+        res.redirect('/expenses');
+    } catch (err) {
+        console.error("Linking Error:", err);
+        res.status(500).send("Error linking project to expense.");
+    }
+};

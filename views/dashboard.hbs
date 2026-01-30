@@ -1,48 +1,164 @@
+
 <div class="row align-items-center mb-5">
     <div class="col">
-        <h1 class="fw-bold">Business Overview</h1>
+        <h1 class="fw-bold text-white">Business Overview</h1>
         <p class="text-secondary">Summary of all projects and site expenditures in <strong>RWF</strong>.</p>
     </div>
     <div class="col-auto">
         <div class="text-end">
             <p class="mb-0 small text-secondary">Current User</p>
-            <p class="mb-0 fw-bold">{{user.name}}</p>
+            <p class="mb-0 fw-bold text-info">{{user.name}}</p>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
+{{!-- Stat Cards Section --}}
+<div class="row g-4 mb-5">
     <div class="col-md-4">
-        <div class="card p-4 stat-card shadow-sm">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-primary border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">CONTRACT PORTFOLIO</p>
-            <h3 class="fw-bold mb-0 text-white">{{totalProjectValue}} <span class="fs-6 text-secondary">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-white">{{totalProjectValue}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #dc3545;">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-danger border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">TOTAL EXPENSES</p>
-            <h3 class="fw-bold mb-0 text-danger">{{totalExpenses}} <span class="fs-6 text-secondary">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-danger">{{totalExpenses}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #0dcaf0;">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">VAT CREDIT (RRA)</p>
-            <h3 class="fw-bold mb-0 text-warning">{{totalPurchaseVAT}} <span class="fs-6 text-secondary">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-warning">{{totalPurchaseVAT}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
-      <div class="col-md-4">
-        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #0dcaf0;">
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-info border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">TOTAL PURCHASES</p>
-            <h3 class="fw-bold mb-0 text-primary">{{totalPurchases}} <span class="fs-6 text-secondary">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-primary">{{totalPurchases}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-success border-4" style="min-height: 130px;">
+            <p class="text-secondary small mb-1">NET PURCHASES (PRE-TAX)</p>
+            <h3 class="fw-bold mb-0 text-info">{{totalPurchaseNet}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
-          <div class="col-md-4">
-        <div class="card p-4 stat-card shadow-sm" style="border-left-color: #0dcaf0;">
-            <p class="text-secondary small mb-1"> NET PURCHASES</p>
-            <h3 class="fw-bold mb-0 text-info">{{totalPurchaseNet}} <span class="fs-6 text-secondary">RWF</span></h3>
-        </div>
-        </div>
-
-
-
+    </div>
 </div>
+
+{{!-- Charts Section --}}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card bg-dark border-secondary p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="text-white fw-bold mb-0">Expense Trends</h5>
+                <span class="badge bg-black text-info border border-secondary small">Last 6 Months</span>
+            </div>
+            <div style="height: 300px; width: 100%;">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card bg-dark border-secondary p-4 shadow-sm">
+            <h5 class="text-white fw-bold mb-4">Portfolio Allocation</h5>
+            <div style="height: 300px; width: 100%;">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Data Bridge --}}
+<input type="hidden" id="chartDataStore" value='{{{chartData}}}'>
+
+{{!-- Charting Scripts --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dataInput = document.getElementById('chartDataStore');
+        if (!dataInput || !dataInput.value) return;
+
+        try {
+            const rawData = JSON.parse(dataInput.value);
+
+            // 1. Expense Trend Line Chart
+            const ctxExp = document.getElementById('expenseChart').getContext('2d');
+            new Chart(ctxExp, {
+                type: 'line',
+                data: {
+                    labels: rawData.expenseLabels,
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: rawData.expenseValues,
+                        borderColor: '#0dcaf0',
+                        backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0dcaf0',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1a1a1a', titleColor: '#0dcaf0' }
+                    },
+                    scales: {
+                        y: { 
+                            grid: { color: '#333' }, 
+                            ticks: { color: '#888', font: { size: 10 } } 
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: '#888', font: { size: 10 } } 
+                        }
+                    }
+                }
+            });
+
+            // 2. Budget Distribution Doughnut Chart
+            const ctxBud = document.getElementById('budgetChart').getContext('2d');
+            new Chart(ctxBud, {
+                type: 'doughnut',
+                data: {
+                    labels: rawData.budgetLabels,
+                    datasets: [{
+                        data: rawData.budgetValues,
+                        backgroundColor: [
+                            '#0d6efd', '#6610f2', '#198754', '#ffc107', '#dc3545', '#0dcaf0'
+                        ],
+                        hoverOffset: 10,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { color: '#888', font: { size: 11 }, padding: 15 } 
+                        }
+                    },
+                    cutout: '75%'
+                }
+            });
+        } catch (error) {
+            console.error("Dashboard Chart Error:", error);
+        }
+    });
+</script>
+
+<style>
+    .stat-card {
+        transition: transform 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
