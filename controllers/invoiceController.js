@@ -74,7 +74,10 @@ exports.createInvoice = async (req, res) => {
         res.redirect('/invoices');
     } catch (err) {
         console.error("Invoice Error:", err);
-        res.status(500).send(err.message);
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error while creating invoice . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -114,7 +117,11 @@ exports.updateInvoice = async (req, res) => {
 
         res.redirect('/invoices');
     } catch (err) { 
-        res.status(500).send(err.message); 
+     
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Updating error. Something went wrong on our end.' 
+        });
     }
 };
 
@@ -142,8 +149,11 @@ exports.downloadInvoicePDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=Invoice-${invoice.invoiceNumber}.pdf`);
         res.send(Buffer.from(pdfBuffer));
     } catch (err) { 
-        console.error(err);
-        res.status(500).send("Error generating PDF"); 
+        
+         res.status(500).render("500",{
+        layout: false,
+        message: 'Error Generating pdf . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -168,7 +178,10 @@ exports.deleteInvoice = async (req, res) => {
         }
         res.redirect('/invoices');
     } catch (err) { 
-        res.status(500).send("Error"); 
+         res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while deleting invoices. Something went wrong on our end.' 
+        });
     }
 };
 
@@ -178,7 +191,10 @@ exports.getInvoiceForm = async (req, res) => {
         const projects = await Project.find().lean();
         res.render('invoices/new', { projects });
     } catch (err) {
-        res.status(500).send("Error loading form");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error loading form  . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -188,6 +204,10 @@ exports.getEditInvoice = async (req, res) => {
         const projects = await Project.find().lean();
         res.render('invoices/edit', { invoice, projects });
     } catch (err) {
-        res.status(500).send("Error loading edit form");
+    
+        res.status(500).render("500",{
+        layout: false,
+        message: 'error loading edit form . Something went wrong on our end.' 
+        });
     }
 };

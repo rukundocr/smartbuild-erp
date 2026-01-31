@@ -15,7 +15,10 @@ exports.getLoans = async (req, res) => {
 
         res.render('loans/list', { loans, totals });
     } catch (err) {
-        res.status(500).send("Error loading loans");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while fetching  lonas  . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -32,7 +35,10 @@ exports.createLoan = async (req, res) => {
         res.redirect('/loans');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error creating loan");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while Creating laon. Something went wrong on our end.' 
+        });
     }
 };
 
@@ -51,7 +57,11 @@ exports.addPayment = async (req, res) => {
         await logAction(req.user._id, 'UPDATE', 'LOANS', loan._id, `Paid ${paymentAmount} RWF to ${loan.lenderName}`);
         res.redirect('/loans');
     } catch (err) {
-        res.status(500).send("Error processing payment");
+       
+         res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while Processing payment  . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -60,7 +70,10 @@ exports.deleteLoan = async (req, res) => {
         await Loan.findByIdAndDelete(req.params.id);
         res.redirect('/loans');
     } catch (err) {
-        res.status(500).send("Error deleting loan");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error Deleting loan . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -79,7 +92,10 @@ exports.updateLoan = async (req, res) => {
         res.redirect('/loans');
     } catch (err) {
         console.error("Update Error:", err);
-        res.status(500).send("Error updating loan");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Loan Updating Error . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -137,6 +153,9 @@ exports.exportLoansPDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=Loan_Summary.pdf`);
         res.send(Buffer.from(pdfOutput));
     } catch (err) {
-        res.status(500).send("PDF Error: " + err.message);
+         res.status(500).render("500",{
+        layout: false,
+        message: 'PDF EXPORT WITH SUMMARY Error . Something went wrong on our end.' 
+        });
     }
 };

@@ -67,7 +67,10 @@ exports.getLogs = async (req, res) => {
         });
     } catch (err) {
         console.error("FULL ERROR DETAILS:", err); 
-        res.status(500).send("Error loading audit logs: " + err.message);
+                 res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while loading audit logs . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -78,7 +81,10 @@ exports.clearLogs = async (req, res) => {
         res.redirect('/audit');
     } catch (err) {
         console.error("Error clearing logs:", err);
-        res.status(500).send("Error clearing logs");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while clearing logs . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -124,6 +130,9 @@ exports.exportLogsCSV = async (req, res) => {
 
     } catch (err) {
         console.error("Export Error:", err);
-        res.status(500).send("Error exporting logs");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Exporting Errro . Something went wrong on our end.' 
+        });
     }
 };

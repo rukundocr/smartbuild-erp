@@ -102,6 +102,9 @@ exports.updatePassword = async (req, res) => {
         res.redirect('/auth/login'); // Fixed redirect path to match auth routes
     } catch (err) {
         console.error(err);
-        res.status(500).send("Server Error");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'ServerError  . Something went wrong on our end.' 
+        });
     }
 };

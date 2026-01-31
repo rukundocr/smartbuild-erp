@@ -54,7 +54,10 @@ exports.getDashboard = async (req, res) => {
         });
     } catch (err) {
         console.error("Dashboard Error:", err);
-        res.status(500).send("Dashboard Error");
+          res.status(500).render("500",{
+            layout:false,
+            message:"Dashboard Loading Error. something went wrong to our ends"
+        });
     }
 };
 
@@ -117,7 +120,10 @@ exports.getProjects = async (req, res) => {
         });
     } catch (err) {
         console.error("Error loading projects:", err);
-        res.status(500).send("Error loading projects");
+         res.status(500).render("500",{
+            layout:false,
+            message:"Error loading projects. something went wrong to our ends"
+        });
     }
 };
 
@@ -134,7 +140,10 @@ exports.createProject = async (req, res) => {
         await logAction(req.user._id, 'CREATE', 'PROJECTS', newProject._id, `Created project "${projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-        res.status(500).send("Error creating project");
+          res.status(500).render("500",{
+            layout:false,
+            message:"Creating a  project error. something went wrong to our ends"
+        });
     }
 };
 
@@ -145,7 +154,10 @@ exports.updateProject = async (req, res) => {
         await logAction(req.user._id, 'UPDATE', 'PROJECTS', project._id, `Updated project "${project.projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-        res.status(500).send("Error updating project");
+          res.status(500).render("500",{
+            layout:false,
+            message:"Error while updating project. something went wrong to our ends"
+        });
     }
 };
 
@@ -159,6 +171,9 @@ exports.deleteProject = async (req, res) => {
         }
         res.redirect('/projects');
     } catch (err) {
-        res.status(500).send("Error deleting project");
+           res.status(500).render("500",{
+            layout:false,
+            message:"Error Deleting Project. something went wrong to our ends"
+        });
     }
 };

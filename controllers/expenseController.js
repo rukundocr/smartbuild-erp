@@ -1,9 +1,9 @@
 const Expense = require('../models/Expense');
 const Project = require('../models/Project');
-const { logAction } = require('../utils/logger'); // Ensure destructured import
+const { logAction } = require('../utils/logger');
 const { generateExpensePDF } = require('../utils/pdfGenerator');
 
-// 1. Get All Expenses
+// 1. Get All Expenses (Existing logic maintained)
 exports.getExpenses = async (req, res) => {
     try {
         const { projectId, page = 1, startDate, endDate } = req.query;
@@ -52,48 +52,52 @@ exports.getExpenses = async (req, res) => {
                 hasPrev: page > 1,
                 prevPage: parseInt(page) - 1,
                 nextPage: parseInt(page) + 1
-            }
+            },
+            error: req.query.error // Catch validation errors from redirect
         });
     } catch (err) {
         console.error("Error loading expenses:", err);
-        res.status(500).send("Error loading expenses");
+        res.status(500).render("500", { layout: false, message: 'Error loading expenses.' });
     }
 };
 
-// 2. Create new expense
+// 2. Create new expense WITH Budget Validation
 exports.createExpense = async (req, res) => {
     try {
         const { name, recipientPhone, amount, reason, projectId, mode, date } = req.body;
-        
+        const expenseAmount = parseFloat(amount);
+
+        // 1. Fetch Project & Calculate Remaining Balance
+        const project = await Project.findById(projectId);
+        if (!project) return res.redirect('/expenses?error=ProjectNotFound');
+
+        const expenses = await Expense.find({ projectId: project._id });
+        const currentSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const remainingBalance = project.contractAmount - currentSpent;
+
+        // 2. Validation Check
+        if (expenseAmount > remainingBalance) {
+            return res.redirect(`/expenses?error=OverBudget`);
+        }
+
+        // 3. Save if valid
         const newExpense = await Expense.create({
-            name,
-            recipientPhone,
-            amount,
-            reason,
-            projectId,
-            mode,
-            date: date || Date.now(),
+            name, recipientPhone, amount: expenseAmount, reason,
+            projectId, mode, date: date || Date.now(),
             createdBy: req.user._id
         });
 
-        const project = await Project.findById(projectId);
-        const projectName = project ? project.projectName : 'Unknown Project';
-
-        // AUDIT LOG
-        await logAction(
-            req.user._id,
-            'CREATE',
-            'EXPENSES',
-            newExpense._id,
-            `Recorded ${amount} RWF for "${reason}" at ${projectName}. Recipient: ${name}.`
-        );
+        await logAction(req.user._id, 'CREATE', 'EXPENSES', newExpense._id, 
+            `Recorded ${amount} RWF for "${reason}" at ${project.projectName}.`);
         
         res.redirect('/expenses');
     } catch (err) {
         console.error("Error saving expense:", err);
-        res.status(500).send("Error saving expense");
+        res.status(500).render("500", { layout: false, message: 'Unable to save expense.' });
     }
 };
+
+// ... Rest of controller (update, delete, link, pdf) remains exactly as you provided
 
 // 3. Update Expense
 exports.updateExpense = async (req, res) => {
@@ -122,7 +126,10 @@ exports.updateExpense = async (req, res) => {
         res.redirect('/expenses');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error updating expense");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -149,7 +156,11 @@ exports.deleteExpense = async (req, res) => {
         res.redirect('/expenses');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error deleting expense");
+    
+                 res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -185,7 +196,10 @@ exports.downloadPDF = async (req, res) => {
         res.send(Buffer.from(pdfBuffer));
     } catch (err) {
         console.error("PDF Error:", err);
-        res.status(500).send("Error generating PDF: " + err.message);
+                 res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured  . Something went wrong on our end.' 
+        });
     }
 };
 
@@ -212,6 +226,9 @@ exports.linkProject = async (req, res) => {
         res.redirect('/expenses');
     } catch (err) {
         console.error("Linking Error:", err);
-        res.status(500).send("Error linking project to expense.");
+        res.status(500).render("500",{
+        layout: false,
+        message: 'Error occured while linking projetect to expenses . Something went wrong on our end.' 
+        });
     }
 };

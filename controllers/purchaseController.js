@@ -58,8 +58,13 @@ exports.getPurchases = async (req, res) => {
                 nextPage: parseInt(page) + 1
             }
         });
-    } catch (err) {
-        res.status(500).send("Error loading purchases");
+    } catch (err) {   
+            res.status(500).render("500",{
+            layout:false,
+            message:"Error loading purchases. something went wrong to our ends"
+        });
+
+    
     }
 };
 
@@ -164,7 +169,11 @@ exports.exportPurchasesCSV = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error exporting CSV");
+       
+            res.status(500).render("500",{
+            layout:false,
+            message:"Error exporting CSVs. something went wrong to our ends"
+        });
     }
 };
 
@@ -186,6 +195,9 @@ exports.deleteAllPurchases = async (req, res) => {
         res.redirect('/purchases');
     } catch (err) {
         console.error("Error during bulk delete:", err);
-        res.status(500).send("An error occurred while clearing the records.");
+         res.status(500).render("500",{
+            layout:false,
+            message:"An error occurred while clearing the records. something went wrong to our ends"
+        });
     }
 };

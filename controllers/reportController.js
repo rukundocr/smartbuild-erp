@@ -39,7 +39,7 @@ exports.getVATSummary = async (req, res) => {
         console.error(err);
         res.status(500).render("500",{
         layout: false,
-        message: 'Something went wrong on our end.' 
+        message: 'Error occured while loading VAT SUMMARY. Something went wrong on our end.' 
         });
     }
 };
