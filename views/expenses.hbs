@@ -80,7 +80,6 @@
                     </td> 
                     <td class="text-danger fw-bold text-end">{{formatCurrency this.amount}}</td>
                     
-                    {{!-- Project Mapping Column --}}
                     <td class="text-center">
                         {{#if this.projectId}}
                             <div class="badge bg-primary px-3 py-2 mb-2 shadow-sm d-inline-block">
@@ -189,9 +188,9 @@
                         <div class="col-md-6">
                             <label class="small text-secondary mb-1">Payment Mode</label>
                             <select name="mode" class="form-select bg-dark text-white border-secondary">
-                                <option value="MoMo">Mobile Money</option>
+                                <option value="Mobile Money">Mobile Money</option>
                                 <option value="Cash">Cash</option>
-                                <option value="Bank">Bank Transfer</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
                             </select>
                         </div>
                     </div>
@@ -250,9 +249,9 @@
                         <div class="col-md-6">
                             <label class="small text-secondary mb-1">Payment Mode</label>
                             <select name="mode" class="form-select bg-dark text-white border-secondary">
-                                <option value="MoMo" {{#if (eq this.mode 'MoMo')}}selected{{/if}}>Mobile Money</option>
+                                <option value="Mobile Money" {{#if (eq this.mode 'Mobile Money')}}selected{{/if}}>Mobile Money</option>
                                 <option value="Cash" {{#if (eq this.mode 'Cash')}}selected{{/if}}>Cash</option>
-                                <option value="Bank" {{#if (eq this.mode 'Bank')}}selected{{/if}}>Bank Transfer</option>
+                                <option value="Bank Transfer" {{#if (eq this.mode 'Bank Transfer')}}selected{{/if}}>Bank Transfer</option>
                             </select>
                         </div>
                     </div>
@@ -263,7 +262,7 @@
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="submit" class="btn btn-warning w-100 fw-bold shadow">UPDATE RECORD</button>
-                </div>
+                </div> 
             </form>
         </div>
     </div>
