@@ -1,11 +1,14 @@
 <style>
     body {
         background-color: #0f0f0f; 
+        height: 100vh;
+        margin: 0;
     }
     .login-card {
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         backdrop-filter: blur(10px);
         border-radius: 12px;
+        background-color: #151515 !important;
     }
     .form-control {
         height: 48px;
@@ -19,6 +22,7 @@
         background-color: #222 !important;
         border-color: #0d6efd !important;
         box-shadow: 0 0 8px rgba(13, 110, 253, 0.4);
+        color: white !important;
     }
     .input-label {
         color: #0dcaf0; 
@@ -39,7 +43,6 @@
         z-index: 100;
         font-size: 1.1rem;
     }
-    /* Sign Up Link Styling */
     .signup-footer {
         border-top: 1px solid #333;
         margin-top: 25px;
@@ -55,6 +58,10 @@
         color: #fff;
         text-decoration: underline;
     }
+    .alert {
+        border-radius: 8px;
+        font-weight: 500;
+    }
 </style>
 
 <div class="container d-flex justify-content-center align-items-center vh-100">
@@ -62,29 +69,38 @@
         <div class="text-center mb-4">
             <h3 class="fw-bold text-white mb-0">SMARTBUILD LTD</h3>
             <div style="height: 3px; width: 40px; background: #0d6efd; margin: 8px auto; border-radius: 10px;"></div>
+            <p class="text-secondary small mt-2 uppercase tracking-wider">ERP Workspace Access</p>
         </div>
 
+        {{!-- Error Messages --}}
         {{#if error_msg}}
-        <div class="alert alert-danger border-0 bg-danger text-white small py-2 text-center mb-3">
-            {{error_msg}}
+        <div class="alert alert-danger border-0 bg-danger text-white small py-2 text-center mb-3 shadow-sm">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{error_msg}}
+        </div>
+        {{/if}}
+
+        {{!-- Success Messages (e.g. after registration) --}}
+        {{#if success_msg}}
+        <div class="alert alert-success border-0 bg-success text-white small py-2 text-center mb-3 shadow-sm">
+            <i class="fas fa-check-circle me-2"></i> {{success_msg}}
         </div>
         {{/if}}
 
         <form action="/auth/login" method="POST" id="loginForm">
             <div class="mb-3 text-start">
                 <label class="input-label mb-1">Username / Email</label>
-                <input type="text" name="email" class="form-control text-white" placeholder="your@email.com" required autofocus>
+                <input type="email" name="email" class="form-control" placeholder="your@email.com" required autofocus>
             </div>
             
             <div class="mb-4 text-start">
                 <label class="input-label mb-1">Password</label>
                 <div class="password-wrapper">
-                    <input type="password" name="password" id="passwordField" class="form-control text-white" placeholder="••••••••" required>
+                    <input type="password" name="password" id="passwordField" class="form-control" placeholder="••••••••" required>
                     <i class="fas fa-eye toggle-password" id="toggleIcon"></i>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 fw-bold py-3" id="loginBtn">
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-3 shadow" id="loginBtn">
                 <span id="btnText">SIGN IN TO WORKSPACE</span>
                 <span id="btnLoader" class="d-none">
                     <span class="spinner-border spinner-border-sm me-2"></span> CHECKING...
@@ -102,9 +118,10 @@
 </div>
 
 <script>
-    // Toggle Password Logic
+    // Toggle Password Visibility
     const passwordField = document.getElementById('passwordField');
     const toggleIcon = document.getElementById('toggleIcon');
+    
     toggleIcon.addEventListener('click', function () {
         const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
@@ -112,10 +129,14 @@
         this.classList.toggle('fa-eye-slash');
     });
 
-    // Loading Logic
+    // Handle Form Submission Loading State
     document.getElementById('loginForm').addEventListener('submit', function() {
-        document.getElementById('loginBtn').disabled = true; 
-        document.getElementById('btnText').classList.add('d-none');
-        document.getElementById('btnLoader').classList.remove('d-none');
+        const btn = document.getElementById('loginBtn');
+        const text = document.getElementById('btnText');
+        const loader = document.getElementById('btnLoader');
+        
+        btn.disabled = true; 
+        text.classList.add('d-none');
+        loader.classList.remove('d-none');
     });
 </script>

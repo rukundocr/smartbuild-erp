@@ -1,0 +1,70 @@
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h3 class="text-white fw-bold mb-4">Account Settings</h3>
+
+            <div class="card bg-dark border-secondary shadow-lg">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="text-white mb-1"><i class="fas fa-shield-alt text-primary me-2"></i>Two-Factor Authentication (2FA)</h5>
+                            <p class="text-secondary small mb-0">Add an extra layer of security to your account using an authenticator app.</p>
+                        </div>
+                        {{#if is2FAEnabled}}
+                            <span class="badge bg-success">ACTIVE</span>
+                        {{else}}
+                            <span class="badge bg-secondary">DISABLED</span>
+                        {{/if}}
+                    </div>
+
+                    <hr class="border-secondary">
+
+                    {{#if is2FAEnabled}}
+                        <div class="alert alert-info bg-dark border-info text-info small">
+                            Your account is protected. You will be asked for a code every time you log in.
+                        </div>
+                        <form action="/auth/disable-2fa" method="POST" onsubmit="return confirm('Warning: This will reduce your account security. Proceed?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Disable 2FA</button>
+                        </form>
+                    {{else}}
+                        <div class="text-start">
+                            <button class="btn btn-primary fw-bold" data-bs-toggle="collapse" data-bs-target="#setup2FA" onclick="start2FASetup()">
+                                Enable 2FA Now
+                            </button>
+                            
+                            <div class="collapse mt-4" id="setup2FA">
+                                <div class="p-3 border border-secondary rounded bg-black">
+                                    <p class="small text-white mb-3">1. Scan this QR code with Google Authenticator or Authy:</p>
+                                    <div class="text-center mb-3 bg-white p-2 d-inline-block rounded">
+                                        <img id="qrCodeImg" src="" alt="QR Code" style="width: 150px;">
+                                    </div>
+                                    <p class="small text-white mb-2">2. Enter the 6-digit code to confirm:</p>
+                                    <form action="/auth/verify-and-enable-2fa" method="POST" class="row g-2">
+                                        <div class="col-auto">
+                                            <input type="text" name="token" class="form-control form-control-sm" placeholder="000000" maxlength="6" required>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-success btn-sm">Verify & Activate</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="/auth/change-password" class="text-info text-decoration-none small"><i class="fas fa-key me-1"></i> Update Password instead?</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function start2FASetup() {
+        const response = await fetch('/auth/initiate-2fa', { method: 'POST' });
+        const data = await response.json();
+        document.getElementById('qrCodeImg').src = data.qrImageUrl;
+    }
+</script>
