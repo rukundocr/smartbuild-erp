@@ -1,31 +1,138 @@
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-4">
-            <div class="card bg-dark border-secondary p-4 shadow-lg text-center">
-                <i class="fas fa-shield-alt text-primary fa-3x mb-3"></i>
-                <h4 class="text-white fw-bold">Two-Step Verification</h4>
-                <p class="text-secondary small">Enter the 6-digit code from your Authenticator app to access SmartBuild.</p>
+<style>
+    body {
+        background-color: #0f0f0f;
+    }
+    .auth-card {
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        background-color: #151515 !important;
+    }
+    .otp-input {
+        background-color: #000 !important;
+        border: 2px solid #333 !important;
+        color: #0dcaf0 !important;
+        font-size: 2.2rem !important;
+        letter-spacing: 12px;
+        padding-left: 20px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    .otp-input:focus {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 15px rgba(13, 110, 253, 0.3);
+        outline: none;
+    }
+    .security-icon {
+        background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 4rem;
+    }
+    .btn-verify {
+        height: 50px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .alert {
+        border-radius: 8px;
+        font-weight: 500;
+    }
+</style>
 
-                {{#if error_msg}}
-                    <div class="alert alert-danger bg-danger border-0 text-white small py-2">{{error_msg}}</div>
-                {{/if}}
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card auth-card p-4 shadow-lg" style="width: 100%; max-width: 420px;">
+        <div class="text-center mb-4">
+            <i class="fas fa-shield-alt security-icon mb-3"></i>
+            <h3 class="text-white fw-bold">Identity Verification</h3>
+            <p class="text-secondary small">SmartBuild ERP requires a 6-digit secure token to proceed.</p>
+        </div>
 
-                <form action="/auth/login-2fa" method="POST">
-                    <div class="mb-4">
-                        <input type="text" name="token" 
-                               class="form-control form-control-lg text-center fw-bold" 
-                               placeholder="000 000" 
-                               maxlength="6" 
-                               pattern="\d*" 
-                               inputmode="numeric" 
-                               style="letter-spacing: 10px; font-size: 1.5rem;"
-                               required autofocus>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2">VERIFY & LOGIN</button>
-                </form>
-                
-                <a href="/auth/login" class="btn btn-link text-secondary small mt-3 text-decoration-none">Back to Login</a>
+        {{!-- Error Message Alert --}}
+        {{#if error_msg}}
+            <div class="alert alert-danger border-0 bg-danger text-white small py-2 text-center mb-4">
+                <i class="fas fa-times-circle me-2"></i> {{error_msg}}
             </div>
+        {{/if}}
+
+        <form action="/auth/login-2fa" method="POST" id="twoFactorForm">
+            <div class="mb-4">
+                <label class="text-info small fw-bold text-uppercase mb-2 d-block text-center">Enter 6-Digit Code</label>
+                <input type="text" 
+                       name="token" 
+                       id="otpToken"
+                       class="form-control form-control-lg otp-input text-center" 
+                       placeholder="······" 
+                       maxlength="6" 
+                       pattern="\d*" 
+                       inputmode="numeric" 
+                       required 
+                       autofocus 
+                       autocomplete="one-time-code">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-verify mb-3" id="verifyBtn">
+                <span id="btnText">Verify & Login</span>
+                <span id="btnLoader" class="d-none">
+                    <span class="spinner-border spinner-border-sm me-2"></span> AUTHORIZING...
+                </span>
+            </button>
+        </form>
+
+        <div class="text-center border-top border-secondary pt-3">
+            <a href="/auth/login" class="text-secondary text-decoration-none small">
+                <i class="fas fa-arrow-left me-1"></i> Back to login
+            </a>
         </div>
     </div>
 </div>
+
+<script>
+    const otpInput = document.getElementById('otpToken');
+    const authForm = document.getElementById('twoFactorForm');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const btnText = document.getElementById('btnText');
+    const btnLoader = document.getElementById('btnLoader');
+
+    /**
+     * Updates the UI to show a loading/submitting state
+     */
+    function showProcessingState() {
+        otpInput.readOnly = true;
+        otpInput.style.opacity = '0.5';
+        otpInput.style.cursor = 'not-allowed';
+        verifyBtn.disabled = true;
+        btnText.classList.add('d-none');
+        btnLoader.classList.remove('d-none');
+    }
+
+    /**
+     * LISTENER: Triggered on every input change (typing or pasting)
+     */
+    otpInput.addEventListener('input', function() {
+        // 1. Instantly strip any non-numeric characters
+        this.value = this.value.replace(/[^0-9]/g, '');
+
+        // 2. If length reaches 6, auto-submit
+        if (this.value.length === 6) {
+            showProcessingState();
+            
+            // 50ms delay gives the user a split-second to see their 6th digit
+            setTimeout(() => {
+                authForm.submit();
+            }, 50);
+        }
+    });
+
+    /**
+     * LISTENER: Standard form submission (if user clicks button manually)
+     */
+    authForm.addEventListener('submit', function() {
+        showProcessingState();
+    });
+
+    // Ensure the focus is always on the input field for speed
+    window.addEventListener('load', () => otpInput.focus());
+</script>
