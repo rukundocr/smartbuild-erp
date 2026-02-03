@@ -80,7 +80,7 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
     // --- NEW: QR CODE & FOOTER DETAILS ---
     
     // Create the Verification URL (Replace with your actual domain later)
-    const verifyUrl = `https://smartbuild-erp.render.com/invoices/verify/invoice/${invoice._id}`;
+    const verifyUrl = `https://smartbuildms.onrender.com/invoices/verify/invoice/${invoice._id}`;
     
     try {
         const qrDataUrl = await QRCode.toDataURL(verifyUrl);
