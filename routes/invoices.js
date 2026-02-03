@@ -30,6 +30,6 @@ router.post('/delete/:id', ensureAuthenticated, ensureAdmin, invoiceController.d
  * This route is accessed via the QR code on the PDF.
  * It is public so that clients can verify authenticity without an account.
  */
-router.get('/verify/:id', invoiceController.verifyInvoicePublic);
+router.get('/verify/invoice/:id', invoiceController.verifyInvoicePublic);
 
 module.exports = router;
