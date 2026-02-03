@@ -126,6 +126,7 @@ exports.updateInvoice = async (req, res) => {
 };
 
 // 4. Download PDF
+// Locate exports.downloadInvoicePDF and add 'await'
 exports.downloadInvoicePDF = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id)
@@ -134,7 +135,6 @@ exports.downloadInvoicePDF = async (req, res) => {
 
         if (!invoice) return res.status(404).send("Invoice not found");
 
-        // Optional: Log when an invoice is downloaded
         await logAction(
             req.user._id,
             'EXPORT',
@@ -143,17 +143,15 @@ exports.downloadInvoicePDF = async (req, res) => {
             `Downloaded PDF for Invoice ${invoice.invoiceNumber}`
         );
 
-        const pdfBuffer = generateInvoicePDF(invoice);
+        // ADD 'await' HERE
+        const pdfBuffer = await generateInvoicePDF(invoice); 
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Invoice-${invoice.invoiceNumber}.pdf`);
         res.send(Buffer.from(pdfBuffer));
     } catch (err) { 
-        
-         res.status(500).render("500",{
-        layout: false,
-        message: 'Error Generating pdf . Something went wrong on our end.' 
-        });
+        console.error(err);
+        res.status(500).render("500", { layout: false, message: 'Error Generating pdf.' });
     }
 };
 
@@ -209,5 +207,30 @@ exports.getEditInvoice = async (req, res) => {
         layout: false,
         message: 'error loading edit form . Something went wrong on our end.' 
         });
+    }
+};
+
+// Add this to your invoiceController.js
+exports.verifyInvoicePublic = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id)
+            .populate('projectId')
+            .lean();
+
+        if (!invoice) {
+            return res.status(404).render('public/verify-error', { 
+                layout: false,
+                message: "Invalid Invoice Reference" 
+            });
+        }
+
+        // Render a dedicated public verification page (no sidebar/admin links)
+        res.render('public/verify-invoice', { 
+            invoice, 
+            layout: false, 
+            title: 'Verify Invoice | SmartBuild LTD'
+        });
+    } catch (err) {
+        res.status(404).render('public/verify-error', { layout: false });
     }
 };

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Verification | SmartBuild LTD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .verify-card { 
+            max-width: 500px; margin: 50px auto; border: none; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .status-header { background: #198754; color: white; padding: 30px 20px; text-align: center; }
+        .invoice-details { padding: 30px; background: white; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #6c757d; font-weight: 500; }
+        .detail-value { color: #212529; font-weight: 600; }
+        .company-footer { text-align: center; padding: 20px; color: #adb5bd; font-size: 0.85rem; }
+        .checkmark-icon { font-size: 4rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card verify-card">
+        <div class="status-header">
+            <div class="checkmark-icon"><i class="fas fa-check-circle"></i></div>
+            <h3 class="mb-0">Authenticity Verified</h3>
+            <p class="small opacity-75">This is a valid SmartBuild LTD document</p>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="detail-row">
+                <span class="detail-label">Invoice Number</span>
+                <span class="detail-value text-primary">{{invoice.invoiceNumber}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Issue Date</span>
+                <span class="detail-value">{{#formatDate invoice.date}}{{/formatDate}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Project</span>
+                <span class="detail-value">{{invoice.projectId.projectName}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Billed To</span>
+                <span class="detail-value">{{invoice.clientName}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Amount</span>
+                <span class="detail-value text-success">{{invoice.grandTotal}} RWF</span>
+            </div>
+            
+            <div class="mt-4 p-3 bg-light rounded text-center small text-secondary">
+                <i class="fas fa-info-circle me-1"></i> 
+                Digital record matches the physical document provided.
+            </div>
+        </div>
+    </div>
+    
+    <div class="company-footer">
+        <strong>SMARTBUILD LTD</strong><br>
+        Kigali, Rwanda • info@smartbuild.rw
+    </div>
+</div>
+
+</body>
+</html>
