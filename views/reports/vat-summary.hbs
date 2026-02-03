@@ -1,21 +1,22 @@
 {{!-- Print Styles --}}
 <style>
     @media print {
-        .btn, .navbar, .sidebar, .filter-section, .no-print {
+        .btn, .navbar, .sidebar, .filter-section, .no-print, .dataTables_filter, .dataTables_info {
             display: none !important;
         }
         body {
             background-color: white !important;
             color: black !important;
-            padding: 20px;
+            padding: 10px;
         }
         .card {
             border: 1px solid #dee2e6 !important;
             background-color: white !important;
             box-shadow: none !important;
             color: black !important;
+            margin-bottom: 20px;
         }
-        .text-white, .text-secondary, .text-info, .text-warning, .text-danger, .text-success {
+        .text-white, .text-secondary, .text-info, .text-warning, .text-danger, .text-success, .text-primary {
             color: black !important;
         }
         .report-header {
@@ -24,22 +25,40 @@
             border-bottom: 2px solid #000;
             padding-bottom: 10px;
         }
+        .table {
+            color: black !important;
+            border-color: #000 !important;
+        }
+        .table-dark {
+            background-color: white !important;
+        }
     }
     .report-header { display: none; }
+    .card-stat { transition: transform 0.2s; }
+    .card-stat:hover { transform: translateY(-5px); }
 </style>
 
 {{!-- Header for Print Only --}}
-<div class="report-header text-center">
-    <h1 class="fw-bold">VAT DECLARATION SUMMARY</h1>
-    <p>Generated on: {{formatDate (now)}}</p>
-    {{#if startDate}}<span>From: {{startDate}}</span>{{/if}} 
-    {{#if endDate}}<span>To: {{endDate}}</span>{{/if}}
+<div class="report-header">
+    <div class="row">
+        <div class="col-6">
+            <h2 class="fw-bold mb-0">SMARTBUILD LTD</h2>
+            <p class="mb-0">TIN: 123456789</p>
+            <p>Kigali, Rwanda</p>
+        </div>
+        <div class="col-6 text-end">
+            <h3 class="fw-bold">TAX SUMMARY REPORT</h3>
+            <p class="mb-0">Generated: {{formatDate (now)}}</p>
+            {{#if startDate}}<span class="small">Range: {{startDate}} to {{endDate}}</span>{{/if}}
+        </div>
+    </div>
 </div>
 
+{{!-- Screen Header --}}
 <div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <div>
-        <h2 class="fw-bold text-white mb-1">VAT Declaration Summary</h2>
-        <p class="text-secondary mb-0">RRA Tax Compliance Report</p>
+        <h2 class="fw-bold text-white mb-1">Tax Declaration Summary</h2>
+        <p class="text-secondary mb-0"><i class="fas fa-shield-alt me-1 text-info"></i> RRA Compliance & WHT Tracking</p>
     </div>
     <button onclick="window.print()" class="btn btn-outline-light fw-bold shadow-sm">
         <i class="fas fa-print me-1"></i> PRINT / SAVE PDF
@@ -64,68 +83,116 @@
     </form>
 </div>
 
-<div class="row g-4">
+{{!-- Summary Cards --}}
+
+<div class="row g-4 mb-4">
     {{!-- VAT Output --}}
-    <div class="col-md-4">
-        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow">
-            <label class="small text-secondary d-block mb-1">TOTAL VAT OUTPUT (SALES)</label>
-            <h3 class="text-info fw-bold">{{formatCurrency totalOutput}}</h3>
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+            <label class="small text-secondary d-block mb-1 text-uppercase">VAT Output (Sales)</label>
+            <h3 class="text-info fw-bold mb-0">{{formatCurrency totalOutput}}</h3>
         </div>
     </div>
 
     {{!-- VAT Input --}}
-    <div class="col-md-4">
-        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow">
-            <label class="small text-secondary d-block mb-1">TOTAL VAT INPUT (PURCHASES)</label>
-            <h3 class="text-warning fw-bold">{{formatCurrency totalInput}}</h3>
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+            <label class="small text-secondary d-block mb-1 text-uppercase">VAT Input (Purchases)</label>
+            <h3 class="text-warning fw-bold mb-0">{{formatCurrency totalInput}}</h3>
         </div>
     </div>
 
-    {{!-- Net VAT Payable --}}
-    <div class="col-md-4">
-        <div class="card bg-dark p-4 h-100 text-center shadow border-2 {{#if (gt vatPayable 0)}}border-danger{{else}}border-success{{/if}}">
-            <label class="small text-secondary d-block mb-1">NET VAT PAYABLE / (CREDIT)</label>
-            <h3 class="{{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}} fw-bold">
-                {{formatCurrency vatPayable}}
+    {{!-- WHT Collected --}}
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+            <label class="small text-secondary d-block mb-1 text-uppercase">Casual 15% WHT</label>
+            <h3 class="text-primary fw-bold mb-0">{{formatCurrency totalWHT}}</h3>
+        </div>
+    </div>
+
+    {{!-- Net Total Liability --}}
+    <div class="col-md-3">
+        <div class="card bg-dark p-4 h-100 text-center shadow border-2 {{#if (gt totalTaxLiability 0)}}border-danger{{else}}border-success{{/if}} card-stat">
+            <label class="small text-secondary d-block mb-1 text-uppercase">Total Remittance Due</label>
+            <h3 class="{{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}} fw-bold mb-0">
+                {{formatCurrency totalTaxLiability}}
             </h3>
-            <div class="small mt-2 {{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}}">
-                {{#if (gt vatPayable 0)}}
-                    <strong>PAYABLE TO RRA</strong>
+            <div class="small mt-1">
+                {{#if (gt totalTaxLiability 0)}}
+                    <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> PAYABLE TO RRA</span>
                 {{else}}
-                    <strong>VAT CREDIT TO CARRY FORWARD</strong>
+                    <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> TAX CREDIT</span>
                 {{/if}}
             </div>
         </div>
     </div>
 </div>
 
-{{!-- Detailed Breakdown Table (Useful for Audit) --}}
+{{!-- Detailed Breakdown Table (Audit Trail) --}}
 <div class="mt-5">
-    <h5 class="text-white fw-bold mb-3">Audit Breakdown</h5>
-    <div class="card border-secondary bg-dark">
-        <table class="table table-dark mb-0">
-            <thead>
-                <tr class="text-secondary small">
-                    <th>DESCRIPTION</th>
-                    <th class="text-end">AMOUNT (RWF)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Total VAT Collected from Customers</td>
-                    <td class="text-end text-info">+ {{formatCurrency totalOutput}}</td>
-                </tr>
-                <tr>
-                    <td>Total VAT Paid to Suppliers</td>
-                    <td class="text-end text-warning">- {{formatCurrency totalInput}}</td>
-                </tr>
-                <tr class="border-top border-secondary">
-                    <td class="fw-bold">Final Declaration Result</td>
-                    <td class="text-end fw-bold {{#if (gt vatPayable 0)}}text-danger{{else}}text-success{{/if}}">
-                        {{formatCurrency vatPayable}}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+        <i class="fas fa-list-ul me-2 text-info"></i> Audit Breakdown
+    </h5>
+    <div class="card border-secondary bg-dark overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead class="bg-black text-secondary small">
+                    <tr>
+                        <th class="ps-4">CATEGORY</th>
+                        <th>DESCRIPTION</th>
+                        <th class="text-end pe-4">AMOUNT (RWF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="ps-4 text-info fw-bold">VAT SALES</td>
+                        <td>Total VAT collected from client invoices</td>
+                        <td class="text-end pe-4 text-info">+ {{formatCurrency totalOutput}}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-warning fw-bold">VAT PURCHASES</td>
+                        <td>Total VAT paid to registered suppliers (Deductible)</td>
+                        <td class="text-end pe-4 text-warning">- {{formatCurrency totalInput}}</td>
+                    </tr>
+                    <tr class="bg-black bg-opacity-25">
+                        <td class="ps-4 text-white small italic">VAT BALANCE</td>
+                        <td class="small italic text-secondary">Net VAT position before WHT</td>
+                        <td class="text-end pe-4 fw-bold">{{formatCurrency vatPayable}}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-primary fw-bold">WITHHOLDING TAX</td>
+                        <td>15% tax deducted from casual worker payments</td>
+                        <td class="text-end pe-4 text-primary">+ {{formatCurrency totalWHT}}</td>
+                    </tr>
+                </tbody>
+                <tfoot class="border-top border-secondary">
+                    <tr class="bg-black">
+                        <td colspan="2" class="ps-4 py-3">
+                            <h5 class="mb-0 fw-bold text-white text-uppercase">Final Declaration Result</h5>
+                        </td>
+                        <td class="text-end pe-4 py-3">
+                            <h4 class="mb-0 fw-bold {{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}}">
+                                {{formatCurrency totalTaxLiability}}
+                            </h4>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{!-- Managing Director Signature (Print Only) --}}
+<div class="report-header mt-5 pt-4">
+    <div class="row">
+        <div class="col-4">
+            <p class="small mb-5 text-uppercase fw-bold">Prepared By:</p>
+            <div class="border-top border-dark pt-2">Accountant / Accountant Signature</div>
+        </div>
+        <div class="col-4"></div>
+        <div class="col-4 text-end">
+            <p class="small mb-5 text-uppercase fw-bold">Approved By:</p>
+            <div class="border-top border-dark pt-2">MANAGING DIRECTOR</div>
+        </div>
     </div>
 </div>

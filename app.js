@@ -68,76 +68,81 @@ app.engine('hbs', engine({
     },
     
     helpers: {
-        gt: (a, b) => a > b,
+    gt: (a, b) => a > b,
 
-        // Used for matching IDs in project/user filters
-        toString: (val) => val ? val.toString() : '',
+    // Used for matching IDs in project/user filters
+    toString: (val) => val ? val.toString() : '',
 
-        // Added substring helper for user initials (e.g., "John" -> "J")
-        substring: function (str, start, len) {
-            if (str && typeof str === 'string') {
-                return str.substring(start, len);
-            }
-            return '';
-        },
-
-        // Improved equality check
-        eq: function (a, b) {
-            if (a === undefined || b === undefined || a === null || b === null) return false;
-            return a.toString() === b.toString();
-        },
-
-        formatCurrency: function (n) {
-            if (!n) return '0 RWF';
-            return new Intl.NumberFormat('en-RW').format(n) + ' RWF';
-        },
-
-        formatDate: function (date) {
-            if (!date) return "";
-            return new Intl.DateTimeFormat('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(new Date(date));
-        },
-
-        /**
-         * NEW: Formats date specifically for HTML <input type="date">
-         * Converts Date to YYYY-MM-DD format
-         */
-        formatDateHTML: function (date) {
-            if (!date) return "";
-            try {
-                const d = new Date(date);
-                if (isNaN(d.getTime())) return ""; // Check for invalid date
-                
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                
-                return `${year}-${month}-${day}`;
-            } catch (err) {
-                return "";
-            }
-        },
-
-        // --- NEW LOAN HELPERS ---
-
-        // Calculates remaining balance: (Total - Paid)
-        subtract: function (a, b) {
-            const result = (parseFloat(a) || 0) - (parseFloat(b) || 0);
-            return new Intl.NumberFormat('en-RW').format(result) + ' RWF';
-        },
-
-        // Calculates percentage for progress bars (Paid / Total * 100)
-        percentage: function (partial, total) {
-            if (!total || total === 0) return 0;
-            const p = (parseFloat(partial) / parseFloat(total)) * 100;
-            return Math.min(100, p).toFixed(0);
+    // Added substring helper for user initials (e.g., "John" -> "J")
+    substring: function (str, start, len) {
+        if (str && typeof str === 'string') {
+            return str.substring(start, len);
         }
+        return '';
+    },
+
+    // Improved equality check
+    eq: function (a, b) {
+        if (a === undefined || b === undefined || a === null || b === null) return false;
+        return a.toString() === b.toString();
+    },
+
+    // REFINED: Handles formatting and prevents the 'toLocaleString' TypeError
+    formatCurrency: function (n) {
+        if (n === undefined || n === null) return '0 RWF';
+        // Ensure n is a number
+        const num = typeof n === 'number' ? n : parseFloat(n);
+        if (isNaN(num)) return '0 RWF';
+        
+        return new Intl.NumberFormat('en-US').format(num) + ' RWF';
+    },
+
+    formatDate: function (date) {
+        if (!date) return "";
+        return new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(new Date(date));
+    },
+
+    /**
+     * NEW: Formats date specifically for HTML <input type="date">
+     * Converts Date to YYYY-MM-DD format
+     */
+    formatDateHTML: function (date) {
+        if (!date) return "";
+        try {
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return ""; 
+            
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+        } catch (err) {
+            return "";
+        }
+    },
+
+    // --- NEW LOAN HELPERS ---
+
+    // Calculates remaining balance: (Total - Paid)
+    subtract: function (a, b) {
+        const result = (parseFloat(a) || 0) - (parseFloat(b) || 0);
+        return new Intl.NumberFormat('en-US').format(result) + ' RWF';
+    },
+
+    // Calculates percentage for progress bars (Paid / Total * 100)
+    percentage: function (partial, total) {
+        if (!total || total === 0) return 0;
+        const p = (parseFloat(partial) / parseFloat(total)) * 100;
+        return Math.min(100, p).toFixed(0);
     }
+}
 }));
 
 
@@ -179,6 +184,8 @@ app.use('/expenses', require('./routes/expenses'));
 app.use('/rra-sales', require('./routes/rraSales'));
 app.use('/reports', reportRoutes);
 app.use('/loans', loanRoutes);
+app.use('/casual-workers', require('./routes/casualWorkers'));
+
 
 // This middleware triggers only if none of the routes above match the URL
 app.use((req, res, next) => {

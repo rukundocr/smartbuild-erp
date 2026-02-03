@@ -1,0 +1,248 @@
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white fw-bold mb-0">Casual Payment History</h2>
+            <p class="text-info small"><i class="fas fa-calculator me-1"></i> Tracking 15% Withholding Tax (WHT)</p>
+        </div>
+        <a href="/casual-workers" class="btn btn-secondary fw-bold">
+            <i class="fas fa-arrow-left me-2"></i>Back to Workers
+        </a>
+    </div>
+
+    <div class="card bg-dark border-secondary shadow-sm">
+        <div class="card-body p-3">
+            <div class="table-responsive">
+                <table id="paymentsTable" class="table table-dark table-hover border-secondary align-middle">
+                    <thead>
+                        <tr class="text-uppercase small text-secondary">
+                            <th>Date</th>
+                            <th>Worker Name</th>
+                            <th>Phone</th>
+                            <th>Project</th>
+                            <th>Net Paid</th>
+                            <th class="text-warning">WHT (15%)</th>
+                            <th>Total</th>
+                            <th>Method</th>
+                            <th class="text-end no-export">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each payments}}
+                        <tr>
+                            <td class="small">{{#formatDate this.date}}{{/formatDate}}</td>
+                            <td class="fw-bold text-white">{{this.workerId.firstName}} {{this.workerId.lastName}}</td>
+                            <td><code class="text-light">{{this.workerId.phoneNumber}}</code></td>
+                            <td class="text-info small">{{this.projectId.projectName}}</td>
+                            <td class="fw-bold">{{formatCurrency this.netAmount}}</td>
+                            <td class="text-warning fw-bold">{{formatCurrency this.taxAmount}}</td>
+                            <td class="text-success fw-bold">{{formatCurrency this.totalExpense}}</td>
+                            <td>
+                                <span class="badge {{#if (eq this.paymentMethod 'Cash')}}bg-secondary{{else}}bg-primary{{/if}}">
+                                    {{this.paymentMethod}}
+                                </span>
+                            </td>
+                            <td class="text-end no-export">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-sm btn-outline-info edit-pay-btn" data-id="{{this._id}}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="/casual-workers/payment/delete/{{this._id}}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-md-4 ms-auto text-end">
+            <div class="card bg-black border-secondary text-white p-3">
+                <small class="text-secondary fw-bold">TOTAL WHT TO REMIT (VISIBLE)</small>
+                <h3 id="totalWHTSum" class="text-warning mb-0">0 RWF</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Edit Payment Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editPaymentForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small text-secondary fw-bold">ACTIVITY</label>
+                        <input type="text" name="activity" id="editActivity" class="form-control bg-dark text-white border-secondary" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-secondary fw-bold">NET AMOUNT (RWF)</label>
+                        <input type="number" name="amount" id="editAmount" class="form-control bg-dark text-info border-info fw-bold" required oninput="recalcEditTax()">
+                    </div>
+                    <div class="p-3 bg-black rounded border border-secondary text-center mb-3">
+                        <small class="text-secondary d-block">NEW TOTAL (INC. 15% TAX)</small>
+                        <h4 id="editTotalDisplay" class="text-white mb-0">0 RWF</h4>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-secondary fw-bold">PAYMENT METHOD</label>
+                        <select name="paymentMethod" id="editMethod" class="form-select bg-dark text-white border-secondary">
+                            <option value="Cash">Cash</option>
+                            <option value="Mobile Money">Mobile Money</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">UPDATE RECORD</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        const table = $('#paymentsTable').DataTable({
+            "pageLength": 15,
+            "order": [[0, "desc"]],
+            "dom": '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
+            "buttons": [
+                {
+                    extend: 'pdfHtml5',
+                    text: '<i class="fas fa-file-pdf me-1"></i> Export PDF Report',
+                    className: 'btn btn-danger btn-sm fw-bold',
+                    title: '',
+                    orientation: 'landscape',
+                    pageSize: 'A4',
+                    exportOptions: {
+                        columns: ':not(.no-export)' // Excludes the Actions column
+                    },
+                    customize: function (doc) {
+                        // PDF Layout Margins
+                        doc.pageMargins = [30, 110, 30, 80];
+                        
+                        // Header Content
+                        doc['header'] = (function() {
+                            return {
+                                columns: [
+                                    {
+                                        stack: [
+                                            { text: 'SMARTBUILD LTD', fontSize: 16, bold: true, color: '#0d6efd' },
+                                            { text: 'TIN: 123456789', fontSize: 10, margin: [0, 2] },
+                                            { text: 'Kigali, Rwanda', fontSize: 10 },
+                                            { text: 'Phone: +250 788 000 000', fontSize: 10 }
+                                        ],
+                                        margin: [30, 20]
+                                    },
+                                    {
+                                        stack: [
+                                            { text: 'CASUAL LABOR TAX REPORT', fontSize: 14, bold: true, alignment: 'right' },
+                                            { text: 'Generated on: ' + new Date().toLocaleDateString(), alignment: 'right', fontSize: 10 }
+                                        ],
+                                        margin: [0, 20, 30, 0]
+                                    }
+                                ]
+                            };
+                        });
+
+                        // Footer with Managing Director
+                        doc['footer'] = (function(page, pages) {
+                            return {
+                                stack: [
+                                    { 
+                                        canvas: [{ type: 'line', x1: 30, y1: 0, x2: 565, y2: 0, lineWidth: 0.5 }] 
+                                    },
+                                    {
+                                        columns: [
+                                            {
+                                                stack: [
+                                                    { text: 'Prepared by:', fontSize: 9, margin: [0, 10, 0, 20] },
+                                                    { text: '__________________________', margin: [0, 0, 0, 2] },
+                                                    { text: 'MANAGING DIRECTOR', bold: true, fontSize: 10 }
+                                                ],
+                                                margin: [30, 10]
+                                            },
+                                            {
+                                                text: 'Page ' + page.toString() + ' of ' + pages.toString(),
+                                                alignment: 'right',
+                                                fontSize: 9,
+                                                margin: [0, 40, 30, 0]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            };
+                        });
+
+                        // Style the Table in PDF
+                        let objLayout = {};
+                        objLayout['hLineWidth'] = function(i) { return .5; };
+                        objLayout['vLineWidth'] = function(i) { return .5; };
+                        objLayout['hLineColor'] = function(i) { return '#aaa'; };
+                        objLayout['vLineColor'] = function(i) { return '#aaa'; };
+                        doc.content[0].layout = objLayout;
+                    }
+                }
+            ],
+            "drawCallback": function() {
+                let api = this.api();
+                let total = api.column(5, {page:'current'}).data().reduce(function (a, b) {
+                    let x = parseFloat(a.toString().replace(/[^\d.-]/g, '')) || 0;
+                    let y = parseFloat(b.toString().replace(/[^\d.-]/g, '')) || 0;
+                    return x + y;
+                }, 0);
+                $('#totalWHTSum').text(total.toLocaleString() + ' RWF');
+            }
+        });
+
+        // Edit function delegation
+        $(document).on('click', '.edit-pay-btn', function() {
+            const id = $(this).data('id');
+            fetch(`/casual-workers/payment/edit/${id}`)
+                .then(res => res.json())
+                .then(payment => {
+                    document.getElementById('editPaymentForm').action = `/casual-workers/payment/update/${id}`;
+                    document.getElementById('editActivity').value = payment.activity;
+                    document.getElementById('editAmount').value = payment.netAmount;
+                    document.getElementById('editMethod').value = payment.paymentMethod;
+                    recalcEditTax();
+                    new bootstrap.Modal(document.getElementById('editPaymentModal')).show();
+                });
+        });
+    });
+
+    function recalcEditTax() {
+        const net = parseFloat(document.getElementById('editAmount').value) || 0;
+        const tax = net * 0.15;
+        const total = net + tax;
+        document.getElementById('editTotalDisplay').innerText = total.toLocaleString() + ' RWF';
+    }
+</script>
+
+<style>
+    .dataTables_filter input { background-color: #1a1a1a !important; border: 1px solid #444 !important; color: white !important; padding: 6px 12px; border-radius: 4px; }
+    .page-link { background-color: #1a1a1a !important; border-color: #444 !important; color: #0dcaf0 !important; }
+    .page-item.active .page-link { background-color: #0d6efd !important; border-color: #0d6efd !important; }
+</style>
