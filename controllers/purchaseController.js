@@ -11,6 +11,9 @@ exports.getPurchases = async (req, res) => {
         const limit = 15;
         const skip = (page - 1) * limit;
 
+        // NEW: Get the total count of every single record in the database before filtering
+        const totalImportedAllTime = await Purchase.countDocuments();
+
         let query = {};
         if (supplierTIN) {
             query.supplierTIN = { $regex: supplierTIN, $options: 'i' };
@@ -46,6 +49,8 @@ exports.getPurchases = async (req, res) => {
         res.render('purchases', { 
             purchases, 
             totals, 
+            totalImportedAllTime, // Added to pass the master count
+            filteredCount: totalPurchases, // Added to pass current search count
             startDate, 
             endDate,
             supplierTIN,
@@ -63,8 +68,6 @@ exports.getPurchases = async (req, res) => {
             layout:false,
             message:"Error loading purchases. something went wrong to our ends"
         });
-
-    
     }
 };
 
