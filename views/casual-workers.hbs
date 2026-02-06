@@ -1,5 +1,4 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -9,7 +8,7 @@
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#registerWorkerModal">
-                <i class="fas fa-plus me-2"></i>Register New Worker
+                <i class="fas fa-plus me-2"></i>Register Worker
             </button>
             <a href="/casual-workers/payments" class="btn btn-outline-info">
                 <i class="fas fa-history me-2"></i>Payment History
@@ -57,31 +56,17 @@
     <div class="modal-dialog">
         <div class="modal-content bg-dark text-white border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">Register New Worker</h5>
+                <h5 class="modal-title">New Worker</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/casual-workers/register" method="POST">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="text-secondary small fw-bold">FIRST NAME</label>
-                        <input type="text" name="firstName" class="form-control bg-dark text-white border-secondary" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="text-secondary small fw-bold">LAST NAME</label>
-                        <input type="text" name="lastName" class="form-control bg-dark text-white border-secondary" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="text-secondary small fw-bold">ID NUMBER (NID)</label>
-                        <input type="text" name="idNumber" class="form-control bg-dark text-white border-secondary" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="text-secondary small fw-bold">PHONE NUMBER</label>
-                        <input type="text" name="phoneNumber" class="form-control bg-dark text-white border-secondary" required>
-                    </div>
+                    <div class="mb-3"><label class="small text-secondary fw-bold">FIRST NAME</label><input type="text" name="firstName" class="form-control bg-dark text-white border-secondary" required></div>
+                    <div class="mb-3"><label class="small text-secondary fw-bold">LAST NAME</label><input type="text" name="lastName" class="form-control bg-dark text-white border-secondary" required></div>
+                    <div class="mb-3"><label class="small text-secondary fw-bold">ID (NID)</label><input type="text" name="idNumber" class="form-control bg-dark text-white border-secondary" required></div>
+                    <div class="mb-3"><label class="small text-secondary fw-bold">PHONE</label><input type="text" name="phoneNumber" class="form-control bg-dark text-white border-secondary" required></div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn btn-primary w-100">Save Worker</button>
-                </div>
+                <div class="modal-footer border-secondary"><button type="submit" class="btn btn-primary w-100">Save Worker</button></div>
             </form>
         </div>
     </div>
@@ -97,49 +82,48 @@
             <form action="/casual-workers/pay" method="POST">
                 <div class="modal-body">
                     <input type="hidden" name="workerId" id="modalWorkerId">
-                    
                     <div class="mb-3">
-                        <label class="text-secondary small fw-bold">SELECT PROJECT</label>
+                        <label class="text-secondary small fw-bold">WORK DATE</label>
+                        <input type="date" name="date" class="form-control bg-dark text-white border-secondary" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-secondary small fw-bold">PROJECT</label>
                         <select name="projectId" class="form-select bg-dark text-white border-secondary" required>
                             <option value="">-- Choose Project --</option>
-                            {{#each projects}}
-                            <option value="{{this._id}}">{{this.projectName}}</option>
-                            {{/each}}
+                            {{#each projects}}<option value="{{this._id}}">{{this.projectName}}</option>{{/each}}
                         </select>
                     </div>
-
                     <div class="mb-3">
                         <label class="text-secondary small fw-bold">ACTIVITY</label>
                         <input type="text" name="activity" class="form-control bg-dark text-white border-secondary" required>
                     </div>
-
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="text-secondary small fw-bold">NET AMOUNT (RWF)</label>
+                        <div class="col-6 mb-3">
+                            <label class="text-secondary small fw-bold">NET (RWF)</label>
                             <input type="number" id="netAmountInput" name="amount" class="form-control bg-dark text-info border-info fw-bold" required oninput="calculateTax()">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="text-secondary small fw-bold">WHT TAX (15%)</label>
-                            <div id="taxDisplay" class="h4 text-warning mt-1">0 RWF</div>
+                        <div class="col-6 mb-3">
+                            <label class="text-secondary small fw-bold">15% WHT</label>
+                            <div id="taxDisplay" class="h5 text-warning mt-1">0 RWF</div>
                         </div>
                     </div>
-
-                    <div class="bg-black p-3 rounded border border-secondary text-center mb-3">
-                        <small class="text-secondary d-block">TOTAL EXPENSE TO COMPANY</small>
+                    <div class="bg-black p-3 rounded text-center mb-3">
+                        <small class="text-secondary">TOTAL COST</small>
                         <h3 id="totalDisplay" class="text-white mb-0">0 RWF</h3>
                     </div>
-
                     <div class="mb-3">
-                        <label class="text-secondary small fw-bold">PAYMENT METHOD</label>
-                        <select name="paymentMethod" class="form-select bg-dark text-white border-secondary">
+                        <label class="text-secondary small fw-bold">METHOD</label>
+                        <select name="paymentMethod" id="payMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleMomoField()">
                             <option value="Cash">Cash</option>
                             <option value="Mobile Money">Mobile Money</option>
                         </select>
                     </div>
+                    <div class="mb-3 d-none" id="momoRefDiv">
+                        <label class="text-info small fw-bold">MOMO REFERENCE</label>
+                        <input type="text" name="momoRef" class="form-control bg-dark text-info border-info">
+                    </div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn btn-success w-100">Confirm & Record Payment</button>
-                </div>
+                <div class="modal-footer border-secondary"><button type="submit" class="btn btn-success w-100">Record Payment</button></div>
             </form>
         </div>
     </div>
@@ -148,56 +132,24 @@
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
 <script>
     $(document).ready(function() {
-        // Initialize DataTable
-        const table = $('#workersTable').DataTable({
-            "pageLength": 15,
-            "dom": '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
-            "buttons": [
-                {
-                    extend: 'pdfHtml5',
-                    text: '<i class="fas fa-file-pdf"></i> Export Workers',
-                    className: 'btn btn-danger btn-sm',
-                    exportOptions: { columns: [0, 1, 2, 3] }
-                }
-            ]
-        });
-
-        const payModal = new bootstrap.Modal(document.getElementById('paymentModal'));
-
-        // FIXED: Using event delegation for DataTables compatibility
+        $('#workersTable').DataTable();
         $('#workersTable tbody').on('click', '.pay-btn', function() {
-            const id = $(this).data('id');
-            const name = $(this).data('name');
-            
-            document.getElementById('modalWorkerId').value = id;
-            document.getElementById('workerNameSpan').innerText = name;
-            document.getElementById('netAmountInput').value = '';
-            calculateTax(); // Reset totals
-            
-            payModal.show();
+            $('#modalWorkerId').val($(this).data('id'));
+            $('#workerNameSpan').text($(this).data('name'));
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
         });
     });
 
     function calculateTax() {
-        const net = parseFloat(document.getElementById('netAmountInput').value) || 0;
-        const tax = net * 0.15;
-        const total = net + tax;
+        const net = parseFloat($('#netAmountInput').val()) || 0;
+        $('#taxDisplay').text((net * 0.15).toLocaleString() + ' RWF');
+        $('#totalDisplay').text((net * 1.15).toLocaleString() + ' RWF');
+    }
 
-        document.getElementById('taxDisplay').innerText = tax.toLocaleString() + ' RWF';
-        document.getElementById('totalDisplay').innerText = total.toLocaleString() + ' RWF';
+    function toggleMomoField() {
+        $('#momoRefDiv').toggleClass('d-none', $('#payMethod').val() !== 'Mobile Money');
     }
 </script>
-
-<style>
-    .dataTables_filter input { background: #1a1a1a !important; border: 1px solid #444 !important; color: white !important; border-radius: 4px; padding: 4px 10px; }
-    .page-link { background: #1a1a1a !important; border: 1px solid #444 !important; color: #0dcaf0 !important; }
-    .page-item.active .page-link { background: #0d6efd !important; border-color: #0d6efd !important; color: white !important; }
-</style>

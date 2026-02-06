@@ -3,7 +3,7 @@ const CasualPayment = require('../models/CasualPayment');
 const Project = require('../models/Project');
 const { logAction } = require('../utils/logger');
 
-// Display Worker List & Registration Form
+// 1. Display Worker List & Registration Form
 exports.getWorkers = async (req, res) => {
     try {
         const workers = await CasualWorker.find().sort({ createdAt: -1 }).lean();
@@ -14,7 +14,7 @@ exports.getWorkers = async (req, res) => {
     }
 };
 
-// Register New Worker
+// 2. Register New Worker
 exports.registerWorker = async (req, res) => {
     try {
         const { firstName, lastName, idNumber, phoneNumber } = req.body;
@@ -23,18 +23,41 @@ exports.registerWorker = async (req, res) => {
         await logAction(req.user._id, 'CREATE', 'CASUAL_WORKERS', newWorker._id, `Registered casual worker: ${firstName} ${lastName}`);
         res.redirect('/casual-workers');
     } catch (err) {
+        console.error(err);
         res.status(500).send("Error registering worker. ID might already exist.");
     }
 };
 
-// Process Payment with 15% WHT
+// 3. Update Worker Details (Fixes the Edit Worker Modal)
+exports.updateWorker = async (req, res) => {
+    try {
+        const { firstName, lastName, idNumber, phoneNumber } = req.body;
+        const updatedWorker = await CasualWorker.findByIdAndUpdate(
+            req.params.id,
+            { firstName, lastName, idNumber, phoneNumber },
+            { new: true }
+        );
+
+        await logAction(req.user._id, 'UPDATE', 'CASUAL_WORKERS', updatedWorker._id, `Updated worker details for: ${firstName} ${lastName}`);
+        res.redirect('/casual-workers');
+    } catch (err) {
+        res.status(500).send("Update Error");
+    }
+};
+
+// 4. Process Payment with 15% WHT and Custom Date
+// 4. Process Payment with 15% WHT and Custom Date
 exports.processPayment = async (req, res) => {
     try {
-        const { workerId, projectId, activity, amount, paymentMethod, momoRef } = req.body;
+        const { workerId, projectId, activity, amount, paymentMethod, momoRef, date } = req.body;
         
         const netAmount = parseFloat(amount);
-        const taxAmount = netAmount * 0.15; // 15% Withholding Tax
+        const taxAmount = netAmount * 0.15;
         const totalExpense = netAmount + taxAmount;
+
+        // FIX: Ensure we only save the date part (YYYY-MM-DD) to prevent timezone shifts
+        const workDate = date ? new Date(date) : new Date();
+        workDate.setHours(0, 0, 0, 0); 
 
         const payment = await CasualPayment.create({
             workerId,
@@ -44,11 +67,12 @@ exports.processPayment = async (req, res) => {
             taxAmount,
             totalExpense,
             paymentMethod,
-            momoRef
+            momoRef,
+            date: workDate
         });
 
         await logAction(req.user._id, 'CREATE', 'CASUAL_PAYMENTS', payment._id, 
-            `Paid ${netAmount} RWF to worker. Tax: ${taxAmount} RWF. Total Expense: ${totalExpense} RWF`);
+            `Paid ${netAmount} RWF. Work Date: ${date}`);
 
         res.redirect('/casual-workers/payments');
     } catch (err) {
@@ -56,22 +80,55 @@ exports.processPayment = async (req, res) => {
         res.status(500).send("Error processing payment.");
     }
 };
-
-// View All Payments
+// 5. View All Payments
+// 5. View All Payments (WITH BACKEND FILTERING)
 exports.getPaymentHistory = async (req, res) => {
     try {
-        const payments = await CasualPayment.find()
+        const { startDate, endDate } = req.query;
+        let query = {};
+
+        // If dates are provided, build the MongoDB date range query
+        if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999); // Include the entire end day
+                query.date.$lte = end;
+            }
+        }
+
+        const payments = await CasualPayment.find(query)
             .populate('workerId')
             .populate('projectId')
             .sort({ date: -1 })
             .lean();
-        res.render('casual-workers/payments', { payments, title: 'Payment History' });
+
+        // Calculate totals in backend to ensure 100% accuracy
+        const totals = payments.reduce((acc, p) => {
+            acc.net += p.netAmount || 0;
+            acc.tax += p.taxAmount || 0;
+            acc.total += p.totalExpense || 0;
+            return acc;
+        }, { net: 0, tax: 0, total: 0 });
+
+        res.render('casual-workers/payments', { 
+            payments, 
+            totals, 
+            filters: { startDate, endDate }, // Pass back to frontend to keep inputs filled
+            title: 'Payment History' 
+        });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Error loading history");
     }
 };
 
-// FETCH DATA FOR EDIT MODAL
+// 6. FETCH DATA FOR EDIT MODAL (Payments)
 exports.getEditPayment = async (req, res) => {
     try {
         const payment = await CasualPayment.findById(req.params.id).lean();
@@ -82,28 +139,29 @@ exports.getEditPayment = async (req, res) => {
     }
 };
 
-// UPDATE PAYMENT
+// 7. UPDATE PAYMENT
 exports.updatePayment = async (req, res) => {
     try {
-        const { activity, amount, paymentMethod } = req.body;
+        const { activity, amount, paymentMethod, momoRef, date } = req.body;
         const netAmount = parseFloat(amount);
         const taxAmount = netAmount * 0.15;
         const totalExpense = netAmount + taxAmount;
 
-        await CasualPayment.findByIdAndUpdate(req.params.id, {
-            activity,
-            netAmount,
-            taxAmount,
-            totalExpense,
-            paymentMethod
-        });
+        let updateData = { activity, netAmount, taxAmount, totalExpense, paymentMethod, momoRef };
+
+        if (date) {
+            const workDate = new Date(date);
+            workDate.setHours(0, 0, 0, 0);
+            updateData.date = workDate;
+        }
+
+        await CasualPayment.findByIdAndUpdate(req.params.id, updateData);
         res.redirect('/casual-workers/payments');
     } catch (err) {
         res.status(500).send("Update Error");
     }
 };
-
-// DELETE PAYMENT
+// 8. DELETE PAYMENT
 exports.deletePayment = async (req, res) => {
     try {
         await CasualPayment.findByIdAndDelete(req.params.id);

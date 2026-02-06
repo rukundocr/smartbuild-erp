@@ -1,76 +1,118 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/select/1.7.0/css/select.bootstrap5.min.css">
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <div>
-            <h2 class="text-white fw-bold mb-0">Casual Payment History</h2>
-            <p class="text-info small"><i class="fas fa-calculator me-1"></i> Tracking 15% Withholding Tax (WHT)</p>
+            <h2 class="text-white fw-bold mb-0">WHT Declaration & Payment History</h2>
+            <p class="text-info small mb-0">SMARTBUILD LTD | Kigali-Gasabo</p>
         </div>
-        <a href="/casual-workers" class="btn btn-secondary fw-bold">
-            <i class="fas fa-arrow-left me-2"></i>Back to Workers
-        </a>
+        <div class="d-flex gap-2">
+            <button id="bulkPrintBtn" class="btn btn-info btn-sm fw-bold shadow-sm">
+                <i class="fas fa-file-contract me-1"></i> PRINT WORK CONTRACTS
+            </button>
+            <a href="/casual-workers" class="btn btn-secondary btn-sm">Back</a>
+        </div>
     </div>
 
-    <div class="card bg-dark border-secondary shadow-sm">
+    <div class="card bg-dark border-secondary mb-4 shadow no-print">
+        <div class="card-body">
+            <form action="/casual-workers/payments" method="GET" class="row align-items-end g-2">
+                <div class="col-md-4">
+                    <label class="small text-secondary fw-bold">START DATE</label>
+                    <input type="date" name="startDate" id="filterStartDate" value="{{filters.startDate}}" class="form-control bg-dark text-white border-secondary">
+                </div>
+                <div class="col-md-4">
+                    <label class="small text-secondary fw-bold">END DATE</label>
+                    <input type="date" name="endDate" id="filterEndDate" value="{{filters.endDate}}" class="form-control bg-dark text-white border-secondary">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1 fw-bold">FILTER</button>
+                    <a href="/casual-workers/payments" class="btn btn-outline-secondary">RESET</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
         <div class="card-body p-3">
             <div class="table-responsive">
-                <table id="paymentsTable" class="table table-dark table-hover border-secondary align-middle">
+                <table id="paymentsTable" class="table table-dark table-hover border-secondary align-middle w-100">
                     <thead>
-                        <tr class="text-uppercase small text-secondary">
+                        <tr class="small text-secondary text-uppercase bg-black">
+                            <th class="no-print"><input type="checkbox" id="selectAll"></th>
+                            <th>#</th> 
                             <th>Date</th>
                             <th>Worker Name</th>
-                            <th>Phone</th>
-                            <th>Project</th>
+                            <th>ID Number</th>
+                            <th>Worker Phone</th>
+                            <th>Activity</th>
                             <th>Net Paid</th>
                             <th class="text-warning">WHT (15%)</th>
-                            <th>Total</th>
-                            <th>Method</th>
-                            <th class="text-end no-export">Actions</th>
+                            <th>Total Cost</th>
+                            <th>MoMo Ref</th>
+                            <th class="text-end no-print">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each payments}}
-                        <tr>
-                            <td class="small">{{#formatDate this.date}}{{/formatDate}}</td>
-                            <td class="fw-bold text-white">{{this.workerId.firstName}} {{this.workerId.lastName}}</td>
-                            <td><code class="text-light">{{this.workerId.phoneNumber}}</code></td>
-                            <td class="text-info small">{{this.projectId.projectName}}</td>
-                            <td class="fw-bold">{{formatCurrency this.netAmount}}</td>
-                            <td class="text-warning fw-bold">{{formatCurrency this.taxAmount}}</td>
-                            <td class="text-success fw-bold">{{formatCurrency this.totalExpense}}</td>
-                            <td>
-                                <span class="badge {{#if (eq this.paymentMethod 'Cash')}}bg-secondary{{else}}bg-primary{{/if}}">
-                                    {{this.paymentMethod}}
-                                </span>
-                            </td>
-                            <td class="text-end no-export">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-outline-info edit-pay-btn" data-id="{{this._id}}">
+                        <tr data-worker="{{this.workerId.firstName}} {{this.workerId.lastName}}" 
+                            data-idnum="{{this.workerId.idNumber}}" 
+                            data-phone="{{this.workerId.phoneNumber}}"
+                            data-amount="{{this.netAmount}}" 
+                            data-activity="{{this.activity}}"
+                            data-ref="{{this.momoRef}}"
+                            data-date="{{#formatDate this.date "YYYY-MM-DD"}}{{/formatDate}}">
+                            <td class="no-print"><input type="checkbox" class="row-select"></td>
+                            <td class="item-number"></td>
+                            <td>{{#formatDate this.date "YYYY-MM-DD"}}{{/formatDate}}</td>
+                            <td class="fw-bold">{{this.workerId.firstName}} {{this.workerId.lastName}}</td>
+                            <td><small>{{this.workerId.idNumber}}</small></td>
+                            <td><small>{{this.workerId.phoneNumber}}</small></td>
+                            <td class="small">{{this.activity}}</td>
+                            <td>{{this.netAmount}}</td> <td class="text-warning fw-bold">{{this.taxAmount}}</td>
+                            <td>{{this.totalExpense}}</td>
+                            <td>{{#if this.momoRef}}<code class="text-info">{{this.momoRef}}</code>{{else}}Cash{{/if}}</td>
+                            <td class="text-end no-print">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button class="btn btn-sm btn-outline-info edit-pay-btn" 
+                                            data-id="{{this._id}}" 
+                                            data-date="{{#formatDate this.date "YYYY-MM-DD"}}{{/formatDate}}"
+                                            data-activity="{{this.activity}}"
+                                            data-amount="{{this.netAmount}}"
+                                            data-method="{{this.paymentMethod}}"
+                                            data-ref="{{this.momoRef}}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <form action="/casual-workers/payment/delete/{{this._id}}" method="POST" onsubmit="return confirm('Are you sure?')">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                    <form action="/casual-workers/payment/delete/{{this._id}}" method="POST" onsubmit="return confirm('Delete record?')">
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                         {{/each}}
                     </tbody>
+                    <tfoot class="bg-black fw-bold">
+                        <tr id="tableFooterTotals">
+                            <td colspan="7" class="text-end text-secondary">TOTALS:</td>
+                            <td>{{formatCurrency totals.net}}</td>
+                            <td class="text-warning">{{formatCurrency totals.tax}}</td>
+                            <td>{{formatCurrency totals.total}}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
     </div>
-</div>
 
-<div class="container-fluid mt-3">
-    <div class="row">
-        <div class="col-md-4 ms-auto text-end">
-            <div class="card bg-black border-secondary text-white p-3">
-                <small class="text-secondary fw-bold">TOTAL WHT TO REMIT (VISIBLE)</small>
-                <h3 id="totalWHTSum" class="text-warning mb-0">0 RWF</h3>
+    <div class="row mt-4 mb-5">
+        <div class="col-md-5">
+            <div class="card bg-black border-secondary p-4 shadow-sm" style="border-left: 4px solid #ffc107;">
+                <small class="text-secondary fw-bold text-uppercase">Total WHT Liability to Declare</small>
+                <h2 class="text-warning mb-0">{{formatCurrency totals.tax}} RWF</h2>
+                <div class="text-info small mt-2 italic">Report Period: {{filters.startDate}} to {{filters.endDate}}</div>
             </div>
         </div>
     </div>
@@ -78,36 +120,25 @@
 
 <div class="modal fade" id="editPaymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title">Edit Payment Details</h5>
+        <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+            <div class="modal-header border-secondary text-info">
+                <h5 class="modal-title">Edit Payment & Reference</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="editPaymentForm" method="POST">
                 <div class="modal-body">
+                    <div class="mb-3"><label class="small fw-bold text-secondary">DATE</label><input type="date" name="date" id="editDate" class="form-control bg-dark text-white border-secondary"></div>
+                    <div class="mb-3"><label class="small fw-bold text-secondary">ACTIVITY</label><input type="text" name="activity" id="editActivity" class="form-control bg-dark text-white border-secondary"></div>
+                    <div class="mb-3"><label class="small fw-bold text-info">NET AMOUNT (RWF)</label><input type="number" name="amount" id="editAmount" class="form-control bg-dark text-info border-info fw-bold"></div>
                     <div class="mb-3">
-                        <label class="small text-secondary fw-bold">ACTIVITY</label>
-                        <input type="text" name="activity" id="editActivity" class="form-control bg-dark text-white border-secondary" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small text-secondary fw-bold">NET AMOUNT (RWF)</label>
-                        <input type="number" name="amount" id="editAmount" class="form-control bg-dark text-info border-info fw-bold" required oninput="recalcEditTax()">
-                    </div>
-                    <div class="p-3 bg-black rounded border border-secondary text-center mb-3">
-                        <small class="text-secondary d-block">NEW TOTAL (INC. 15% TAX)</small>
-                        <h4 id="editTotalDisplay" class="text-white mb-0">0 RWF</h4>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small text-secondary fw-bold">PAYMENT METHOD</label>
+                        <label class="small fw-bold text-secondary">METHOD</label>
                         <select name="paymentMethod" id="editMethod" class="form-select bg-dark text-white border-secondary">
-                            <option value="Cash">Cash</option>
-                            <option value="Mobile Money">Mobile Money</option>
+                            <option value="Cash">Cash</option><option value="Mobile Money">Mobile Money</option>
                         </select>
                     </div>
+                    <div class="mb-3"><label class="small fw-bold text-secondary">MOMO REFERENCE ID</label><input type="text" name="momoRef" id="editRef" class="form-control bg-dark text-white border-secondary"></div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">UPDATE RECORD</button>
-                </div>
+                <div class="modal-footer border-secondary"><button type="submit" class="btn btn-primary w-100 fw-bold">Save Changes</button></div>
             </form>
         </div>
     </div>
@@ -118,131 +149,156 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
 <script>
     $(document).ready(function() {
+        const startDate = $('#filterStartDate').val() || 'Start';
+        const endDate = $('#filterEndDate').val() || 'End';
+        const reportTitle = `WHT (15%) DECLARATION REPORT (${startDate} to ${endDate})`;
+
         const table = $('#paymentsTable').DataTable({
-            "pageLength": 15,
-            "order": [[0, "desc"]],
-            "dom": '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
-            "buttons": [
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="fas fa-file-excel me-1"></i> DOWNLOAD EXCEL',
+                    className: 'btn btn-success btn-sm mb-3 fw-bold me-2',
+                    title: reportTitle,
+                    footer: true,
+                    messageTop: 'SMARTBUILD LTD - TIN: 120333710',
+                    exportOptions: { columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+                },
                 {
                     extend: 'pdfHtml5',
-                    text: '<i class="fas fa-file-pdf me-1"></i> Export PDF Report',
-                    className: 'btn btn-danger btn-sm fw-bold',
-                    title: '',
+                    text: '<i class="fas fa-file-pdf me-1"></i> EXPORT RRA PDF',
+                    className: 'btn btn-danger btn-sm mb-3 fw-bold',
                     orientation: 'landscape',
-                    pageSize: 'A4',
-                    exportOptions: {
-                        columns: ':not(.no-export)' // Excludes the Actions column
-                    },
-                    customize: function (doc) {
-                        // PDF Layout Margins
-                        doc.pageMargins = [30, 110, 30, 80];
-                        
-                        // Header Content
-                        doc['header'] = (function() {
-                            return {
-                                columns: [
-                                    {
-                                        stack: [
-                                            { text: 'SMARTBUILD LTD', fontSize: 16, bold: true, color: '#0d6efd' },
-                                            { text: 'TIN: 123456789', fontSize: 10, margin: [0, 2] },
-                                            { text: 'Kigali, Rwanda', fontSize: 10 },
-                                            { text: 'Phone: +250 788 000 000', fontSize: 10 }
-                                        ],
-                                        margin: [30, 20]
-                                    },
-                                    {
-                                        stack: [
-                                            { text: 'CASUAL LABOR TAX REPORT', fontSize: 14, bold: true, alignment: 'right' },
-                                            { text: 'Generated on: ' + new Date().toLocaleDateString(), alignment: 'right', fontSize: 10 }
-                                        ],
-                                        margin: [0, 20, 30, 0]
-                                    }
-                                ]
-                            };
+                    footer: true,
+                    exportOptions: { columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, 
+                    customize: function(doc) {
+                        doc.content.splice(0, 0, {
+                            margin: [0, 0, 0, 15],
+                            columns: [
+                                { text: 'SMARTBUILD LTD\nKIGALI|GASABO\nTIN: 120333710', fontSize: 10, bold: true },
+                                { text: reportTitle, alignment: 'right', fontSize: 11, bold: true, color: '#c00' }
+                            ]
                         });
-
-                        // Footer with Managing Director
-                        doc['footer'] = (function(page, pages) {
-                            return {
-                                stack: [
-                                    { 
-                                        canvas: [{ type: 'line', x1: 30, y1: 0, x2: 565, y2: 0, lineWidth: 0.5 }] 
-                                    },
-                                    {
-                                        columns: [
-                                            {
-                                                stack: [
-                                                    { text: 'Prepared by:', fontSize: 9, margin: [0, 10, 0, 20] },
-                                                    { text: '__________________________', margin: [0, 0, 0, 2] },
-                                                    { text: 'MANAGING DIRECTOR', bold: true, fontSize: 10 }
-                                                ],
-                                                margin: [30, 10]
-                                            },
-                                            {
-                                                text: 'Page ' + page.toString() + ' of ' + pages.toString(),
-                                                alignment: 'right',
-                                                fontSize: 9,
-                                                margin: [0, 40, 30, 0]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            };
+                        doc.content.push({
+                            margin: [0, 50, 0, 0],
+                            stack: [
+                                { text: 'Approved By:', fontSize: 10, italic: true },
+                                { text: '__________________________', margin: [0, 30, 0, 5] },
+                                { text: 'KABEHO Theoneste', fontSize: 11, bold: true },
+                                { text: 'Managing Director', fontSize: 10 }
+                            ]
                         });
-
-                        // Style the Table in PDF
-                        let objLayout = {};
-                        objLayout['hLineWidth'] = function(i) { return .5; };
-                        objLayout['vLineWidth'] = function(i) { return .5; };
-                        objLayout['hLineColor'] = function(i) { return '#aaa'; };
-                        objLayout['vLineColor'] = function(i) { return '#aaa'; };
-                        doc.content[0].layout = objLayout;
                     }
                 }
             ],
-            "drawCallback": function() {
-                let api = this.api();
-                let total = api.column(5, {page:'current'}).data().reduce(function (a, b) {
-                    let x = parseFloat(a.toString().replace(/[^\d.-]/g, '')) || 0;
-                    let y = parseFloat(b.toString().replace(/[^\d.-]/g, '')) || 0;
-                    return x + y;
-                }, 0);
-                $('#totalWHTSum').text(total.toLocaleString() + ' RWF');
-            }
+            order: [[2, 'desc']],
+            paging: false,
+            // Simple formatting for numeric columns in table view
+            columnDefs: [
+                { targets: [7, 8, 9], render: $.fn.dataTable.render.number(',', '.', 0, '', ' RWF') }
+            ]
         });
 
-        // Edit function delegation
-        $(document).on('click', '.edit-pay-btn', function() {
-            const id = $(this).data('id');
-            fetch(`/casual-workers/payment/edit/${id}`)
-                .then(res => res.json())
-                .then(payment => {
-                    document.getElementById('editPaymentForm').action = `/casual-workers/payment/update/${id}`;
-                    document.getElementById('editActivity').value = payment.activity;
-                    document.getElementById('editAmount').value = payment.netAmount;
-                    document.getElementById('editMethod').value = payment.paymentMethod;
-                    recalcEditTax();
-                    new bootstrap.Modal(document.getElementById('editPaymentModal')).show();
+        table.on('order.dt search.dt', function () {
+            table.column(1, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        }).draw();
+
+        $('#selectAll').on('click', function() { $('.row-select').prop('checked', this.checked); });
+
+        // Voucher Print Logic
+        $('#bulkPrintBtn').on('click', function() {
+            let selected = [];
+            $('.row-select:checked').each(function() {
+                let row = $(this).closest('tr');
+                selected.push({
+                    name: row.data('worker'),
+                    idnum: row.data('idnum'),
+                    phone: row.data('phone'),
+                    amount: row.data('amount'),
+                    activity: row.data('activity'),
+                    ref: row.data('ref'),
+                    date: row.data('date')
                 });
+            });
+
+            if(selected.length === 0) return alert("Please select workers from the table first.");
+
+            let printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Casual Work Contracts</title>
+                    <style>
+                        body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 11px; color: #111; }
+                        .voucher { border: 1px dashed #444; padding: 15px; margin-bottom: 25px; page-break-inside: avoid; background: #fff; }
+                        .header { border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+                        .company-name { font-size: 14px; font-weight: bold; margin: 0; }
+                        .contract-title { text-align: center; font-weight: bold; text-decoration: underline; margin: 10px 0; font-size: 12px; }
+                        .details { line-height: 1.6; text-align: justify; margin: 10px 0; }
+                        .sig-section { margin-top: 20px; display: flex; justify-content: space-between; }
+                        .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; margin-top: 30px; }
+                    </style>
+                </head>
+                <body>
+            `);
+
+            selected.forEach(v => {
+                printWindow.document.write(`
+                    <div class="voucher">
+                        <div class="header">
+                            <div>
+                                <p class="company-name">SMARTBUILD LTD</p>
+                                <p style="margin:0">TIN: 120333710 | Kigali, Rwanda</p>
+                            </div>
+                            <div style="text-align:right">Date: <strong>${v.date}</strong></div>
+                        </div>
+                        <div class="contract-title">CASUAL WORK & PAYMENT ACKNOWLEDGMENT</div>
+                        <div class="details">
+                            I, <strong>${v.name}</strong> (National ID: <strong>${v.idnum || '_______________'}</strong>), 
+                            hereby acknowledge that I performed the activity of <em>"${v.activity}"</em> for SMARTBUILD LTD. 
+                            I have received a net payment of <strong>${parseFloat(v.amount).toLocaleString()} RWF</strong>. 
+                            This amount was sent via Mobile Money from the Managing Director's phone (0785193526) 
+                            <strong>TO my registered phone number (${v.phone || 'N/A'})</strong> 
+                            ${v.ref ? `with Transaction ID: <strong>${v.ref}</strong>` : ''}. 
+                            This represents the full and final payment for the work mentioned.
+                        </div>
+                        <div class="sig-section">
+                            <div class="sig-box">
+                                <strong>Employer (SmartBuild Ltd)</strong><br>
+                                <small>KABEHO Theoneste</small>
+                            </div>
+                            <div class="sig-box">
+                                <strong>Contractor (Worker)</strong><br>
+                                <small>${v.name}</small>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            });
+
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 500);
+        });
+
+        $('.edit-pay-btn').on('click', function() {
+            const id = $(this).data('id');
+            $('#editPaymentForm').attr('action', `/casual-workers/payment/update/${id}`);
+            $('#editDate').val($(this).data('date'));
+            $('#editActivity').val($(this).data('activity'));
+            $('#editAmount').val($(this).data('amount'));
+            $('#editMethod').val($(this).data('method'));
+            $('#editRef').val($(this).data('ref'));
+            new bootstrap.Modal(document.getElementById('editPaymentModal')).show();
         });
     });
-
-    function recalcEditTax() {
-        const net = parseFloat(document.getElementById('editAmount').value) || 0;
-        const tax = net * 0.15;
-        const total = net + tax;
-        document.getElementById('editTotalDisplay').innerText = total.toLocaleString() + ' RWF';
-    }
 </script>
-
-<style>
-    .dataTables_filter input { background-color: #1a1a1a !important; border: 1px solid #444 !important; color: white !important; padding: 6px 12px; border-radius: 4px; }
-    .page-link { background-color: #1a1a1a !important; border-color: #444 !important; color: #0dcaf0 !important; }
-    .page-item.active .page-link { background-color: #0d6efd !important; border-color: #0d6efd !important; }
-</style>
