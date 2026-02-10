@@ -7,9 +7,7 @@ const { logAction } = require('../utils/logger');
 
 exports.getSalesPage = async (req, res) => {
     try {
-        const { startDate, endDate, buyerTIN, projectId, page = 1 } = req.query;
-        const limit = 15;
-        const skip = (page - 1) * limit;
+        const { startDate, endDate, buyerTIN, projectId } = req.query;
 
         let query = {};
         if (buyerTIN) query.buyerTIN = { $regex: buyerTIN, $options: 'i' };
@@ -33,40 +31,28 @@ exports.getSalesPage = async (req, res) => {
             return acc;
         }, { net: 0, vat: 0, total: 0 });
 
-        const totalSales = await RRASale.countDocuments(query);
-        const totalPages = Math.ceil(totalSales / limit);
-
         const sales = await RRASale.find(query)
             .populate('projectId')
             .sort({ invoiceDate: -1 })
-            .skip(skip)
-            .limit(limit)
             .lean();
 
         const projects = await Project.find().lean();
 
-        res.render('sales', { 
-            sales, 
-            projects, 
+        res.render('sales', {
+            sales,
+            projects,
             totals,
             startDate,
             endDate,
             buyerTIN,
-            projectId,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages,
-                hasNext: page < totalPages,
-                hasPrev: page > 1,
-                prevPage: parseInt(page) - 1,
-                nextPage: parseInt(page) + 1
-            }
+            projectId
         });
+
     } catch (err) {
         console.error("Error loading sales page:", err);
-        res.status(500).render("500",{
-        layout: false,
-        message: 'Error loading sales page.' 
+        res.status(500).render("500", {
+            layout: false,
+            message: 'Error loading sales page.'
         });
 
     }
@@ -108,8 +94,8 @@ exports.importCSVSales = async (req, res) => {
                         });
                         importedCount++;
                     }
-                } catch (e) { 
-                    console.error("Error parsing row during import:", e); 
+                } catch (e) {
+                    console.error("Error parsing row during import:", e);
                 }
             }
 
@@ -145,7 +131,7 @@ exports.exportSalesCSV = async (req, res) => {
         }
 
         const sales = await RRASale.find(query).populate('projectId').sort({ invoiceDate: -1 }).lean();
-        
+
         // SOLID AUDIT LOG
         await logAction(
             req.user._id,
@@ -173,9 +159,9 @@ exports.exportSalesCSV = async (req, res) => {
         res.send(csvData);
     } catch (err) {
         console.error("Export Error:", err);
-        res.status(500).render("500",{
-            layout:false,
-            message:"something went wrong on our end. Export failed"
+        res.status(500).render("500", {
+            layout: false,
+            message: "something went wrong on our end. Export failed"
         });
     }
 };
@@ -184,7 +170,7 @@ exports.deleteAllSales = async (req, res) => {
     try {
         const count = await RRASale.countDocuments({});
         await RRASale.deleteMany({});
-        
+
         // SOLID AUDIT LOG
         await logAction(
             req.user._id,
@@ -193,13 +179,13 @@ exports.deleteAllSales = async (req, res) => {
             'ALL_RECORDS',
             `User performed a bulk delete of ${count} RRA sales records.`
         );
-        
+
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Delete All Error:", err);
-        res.status(500).render("500",{
-            layout:false,
-            message:"Something went wrong while deleting the sales records"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Something went wrong while deleting the sales records"
         });
     }
 };
@@ -207,7 +193,7 @@ exports.deleteAllSales = async (req, res) => {
 exports.linkProject = async (req, res) => {
     try {
         const sale = await RRASale.findByIdAndUpdate(req.params.id, { projectId: req.body.projectId }, { new: true }).populate('projectId');
-        
+
         // SOLID AUDIT LOG
         await logAction(
             req.user._id,
@@ -220,9 +206,9 @@ exports.linkProject = async (req, res) => {
         res.redirect('/rra-sales');
     } catch (err) {
         console.error("Linking Error:", err);
-         res.status(500).render("500",{
-            layout:false,
-            message:"Linking project error. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Linking project error. something went wrong to our ends"
         });
     }
 };

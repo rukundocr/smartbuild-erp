@@ -7,10 +7,7 @@ const { logAction } = require('../utils/logger');
 // 1. Get All Purchases
 exports.getPurchases = async (req, res) => {
     try {
-        const { startDate, endDate, supplierTIN, page = 1 } = req.query;
-        const limit = 15;
-        const skip = (page - 1) * limit;
-
+        const { startDate, endDate, supplierTIN } = req.query;
         // NEW: Get the total count of every single record in the database before filtering
         const totalImportedAllTime = await Purchase.countDocuments();
 
@@ -37,36 +34,24 @@ exports.getPurchases = async (req, res) => {
             return acc;
         }, { net: 0, vat: 0, total: 0 });
 
-        const totalPurchases = await Purchase.countDocuments(query);
-        const totalPages = Math.ceil(totalPurchases / limit);
-
         const purchases = await Purchase.find(query)
             .sort({ date: -1 })
-            .skip(skip)
-            .limit(limit)
             .lean();
 
-        res.render('purchases', { 
-            purchases, 
-            totals, 
+        res.render('purchases', {
+            purchases,
+            totals,
             totalImportedAllTime, // Added to pass the master count
-            filteredCount: totalPurchases, // Added to pass current search count
-            startDate, 
+            filteredCount: purchases.length, // Added to pass current search count
+            startDate,
             endDate,
-            supplierTIN,
-            pagination: {
-                currentPage: parseInt(page),
-                totalPages,
-                hasNext: page < totalPages,
-                hasPrev: page > 1,
-                prevPage: parseInt(page) - 1,
-                nextPage: parseInt(page) + 1
-            }
+            supplierTIN
         });
-    } catch (err) {   
-            res.status(500).render("500",{
-            layout:false,
-            message:"Error loading purchases. something went wrong to our ends"
+
+    } catch (err) {
+        res.status(500).render("500", {
+            layout: false,
+            message: "Error loading purchases. something went wrong to our ends"
         });
     }
 };
@@ -99,7 +84,7 @@ exports.importPurchases = async (req, res) => {
         .on('end', async () => {
             try {
                 const docs = await Purchase.insertMany(results, { ordered: false });
-                
+
                 // AUDIT LOG: Successful Import
                 await logAction(
                     req.user._id,
@@ -172,10 +157,10 @@ exports.exportPurchasesCSV = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-       
-            res.status(500).render("500",{
-            layout:false,
-            message:"Error exporting CSVs. something went wrong to our ends"
+
+        res.status(500).render("500", {
+            layout: false,
+            message: "Error exporting CSVs. something went wrong to our ends"
         });
     }
 };
@@ -185,7 +170,7 @@ exports.deleteAllPurchases = async (req, res) => {
     try {
         const count = await Purchase.countDocuments({});
         await Purchase.deleteMany({});
-        
+
         // AUDIT LOG: Critical Action
         await logAction(
             req.user._id,
@@ -194,13 +179,14 @@ exports.deleteAllPurchases = async (req, res) => {
             'ALL_RECORDS',
             `User performed a bulk delete of ${count} imported RRA purchase records.`
         );
-        
+
         res.redirect('/purchases');
     } catch (err) {
         console.error("Error during bulk delete:", err);
-         res.status(500).render("500",{
-            layout:false,
-            message:"An error occurred while clearing the records. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "An error occurred while clearing the records. something went wrong to our ends"
         });
     }
 };
+

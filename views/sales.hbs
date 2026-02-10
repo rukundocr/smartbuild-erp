@@ -1,11 +1,16 @@
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold text-white mb-1">RRA Sales Imports</h2>
-        <p class="text-secondary mb-0">Total VAT Output: <span class="text-info fw-bold">{{formatCurrency totals.vat}}</span></p>
+        <p class="text-secondary mb-0">Total VAT Output: <span class="text-info fw-bold">{{formatCurrency
+                totals.vat}}</span></p>
     </div>
     <div class="d-flex gap-2">
         {{!-- Updated Export Link to include Project Filter --}}
-        <a href="/rra-sales/export?startDate={{startDate}}&endDate={{endDate}}&buyerTIN={{buyerTIN}}&projectId={{projectId}}" class="btn btn-outline-light btn-sm fw-bold shadow-sm">
+        <a href="/rra-sales/export?startDate={{startDate}}&endDate={{endDate}}&buyerTIN={{buyerTIN}}&projectId={{projectId}}"
+            class="btn btn-outline-light btn-sm fw-bold shadow-sm">
             <i class="fas fa-file-csv me-1"></i> EXPORT CSV
         </a>
         <button class="btn btn-primary btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
@@ -21,15 +26,18 @@
             <form action="/rra-sales" method="GET" class="row g-2 align-items-end">
                 <div class="col-6 col-md-2">
                     <label class="small text-secondary mb-1">From Date</label>
-                    <input type="date" name="startDate" class="form-control bg-black border-secondary text-white" value="{{startDate}}">
+                    <input type="date" name="startDate" class="form-control bg-black border-secondary text-white"
+                        value="{{startDate}}">
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="small text-secondary mb-1">To Date</label>
-                    <input type="date" name="endDate" class="form-control bg-black border-secondary text-white" value="{{endDate}}">
+                    <input type="date" name="endDate" class="form-control bg-black border-secondary text-white"
+                        value="{{endDate}}">
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="small text-secondary mb-1">Buyer TIN</label>
-                    <input type="text" name="buyerTIN" class="form-control bg-black border-secondary text-white" placeholder="Search TIN..." value="{{buyerTIN}}">
+                    <input type="text" name="buyerTIN" class="form-control bg-black border-secondary text-white"
+                        placeholder="Search TIN..." value="{{buyerTIN}}">
                 </div>
                 {{!-- Added: Project Filter --}}
                 <div class="col-12 col-md-3">
@@ -37,9 +45,9 @@
                     <select name="projectId" class="form-select bg-black border-secondary text-white">
                         <option value="">All Projects</option>
                         {{#each projects}}
-                            <option value="{{this._id}}" {{#if (eq ../projectId (toString this._id))}}selected{{/if}}>
-                                {{this.projectName}}
-                            </option>
+                        <option value="{{this._id}}" {{#if (eq ../projectId (toString this._id))}}selected{{/if}}>
+                            {{this.projectName}}
+                        </option>
                         {{/each}}
                     </select>
                 </div>
@@ -50,7 +58,8 @@
             </form>
         </div>
         <div class="col-12 col-md-2">
-            <form action="/rra-sales/delete-all" method="POST" onsubmit="return confirm('CRITICAL: Delete ALL records?')">
+            <form action="/rra-sales/delete-all" method="POST"
+                onsubmit="return confirm('CRITICAL: Delete ALL records?')">
                 <button type="submit" class="btn btn-sm btn-outline-danger fw-bold py-2 w-100">
                     <i class="fas fa-trash-alt me-1"></i> CLEAR ALL
                 </button>
@@ -58,6 +67,8 @@
         </div>
     </div>
 </div>
+
+
 
 {{!-- Summary Cards --}}
 <div class="row g-3 mb-4">
@@ -81,13 +92,24 @@
     </div>
 </div>
 
+{{!-- Table Search Field --}}
+<div class="row mb-3">
+    <div class="col-12 col-md-4 ms-auto">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fas fa-search"></i></span>
+            <input type="text" id="customSearchInput" class="form-control bg-dark border-secondary text-white"
+                placeholder="Search in table...">
+        </div>
+    </div>
+</div>
+
 {{!-- Desktop Table --}}
 <div class="card border-secondary bg-dark shadow-lg d-none d-md-block">
-    <div class="table-responsive">
-        <table class="table table-dark table-hover mb-0">
+    <div class="table-responsive p-3">
+        <table id="salesTable" class="table table-dark table-hover mb-0 w-100">
             <thead>
                 <tr class="text-secondary small border-bottom border-secondary">
-                    <th class="py-3 px-3 class="text-warning"">INVOICE DATE</th>
+                    <th class="py-3 px-3 class=" text-warning"">INVOICE DATE</th>
                     <th class="text-warning">CLIENT name / TIN</th>
                     <th class="text-warning">TIN</th>
                     <th class="text-warning">RECEIPT #</th>
@@ -100,32 +122,37 @@
                 {{#each sales}}
                 <tr class="align-middle border-bottom border-secondary" style="height: 85px;">
                     <td class="small text-white px-3">{{formatDate this.invoiceDate}}</td>
-                   
-                        <td class="fw-bold text-white">{{this.buyerName}}</td>
-                        <td class="small text-white">{{this.buyerTIN}}</td>
-                
+
+                    <td class="fw-bold text-white">{{this.buyerName}}</td>
+                    <td class="small text-white">{{this.buyerTIN}}</td>
+
                     <td class="text-info fw-bold font-monospace">{{this.receiptNumber}}</td>
                     <td class="text-end fw-bold">{{formatCurrency this.totalAmountExclVAT}}</td>
                     <td class="text-end text-info fw-bold">{{formatCurrency this.vatAmount}}</td>
                     <td class="text-end px-3">
-                        <form action="/rra-sales/link/{{this._id}}" method="POST" class="d-flex justify-content-end align-items-center">
-                            <select name="projectId" class="form-select form-select-sm fw-bold border-white" 
+                        <form action="/rra-sales/link/{{this._id}}" method="POST"
+                            class="d-flex justify-content-end align-items-center">
+                            <select name="projectId" class="form-select form-select-sm fw-bold border-white"
                                 style="width: 180px; background-color: #ffffff !important; color: #000000 !important;">
                                 <option value="">-- Select Project --</option>
                                 {{#each ../projects}}
-                                    <option value="{{this._id}}" {{#if (eq ../projectId._id this._id)}}selected{{/if}}>{{this.projectName}}</option>
+                                <option value="{{this._id}}" {{#if (eq ../projectId._id this._id)}}selected{{/if}}>
+                                    {{this.projectName}}</option>
                                 {{/each}}
                             </select>
-                            <button type="submit" class="btn btn-sm btn-primary ms-1 shadow-sm"><i class="fas fa-link"></i></button>
+                            <button type="submit" class="btn btn-sm btn-primary ms-1 shadow-sm"><i
+                                    class="fas fa-link"></i></button>
                         </form>
                         {{#if this.projectId}}
-                            <div class="x-small text-info mt-1"><i class="fas fa-check-circle me-1"></i>{{this.projectId.projectName}}</div>
+                        <div class="x-small text-info mt-1"><i
+                                class="fas fa-check-circle me-1"></i>{{this.projectId.projectName}}</div>
                         {{/if}}
                     </td>
                 </tr>
                 {{else}}
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-secondary">No records found matching your criteria.</td>
+                    <td colspan="6" class="text-center py-5 text-secondary">No records found matching your criteria.
+                    </td>
                 </tr>
                 {{/each}}
             </tbody>
@@ -148,36 +175,14 @@
                 <span class="text-success fw-bold">{{formatCurrency this.totalAmountExclVAT}}</span>
             </div>
             {{#if this.projectId}}
-                <div class="x-small text-info mt-1 fw-bold"><i class="fas fa-project-diagram me-1"></i>{{this.projectId.projectName}}</div>
+            <div class="x-small text-info mt-1 fw-bold"><i
+                    class="fas fa-project-diagram me-1"></i>{{this.projectId.projectName}}</div>
             {{/if}}
         </div>
     </div>
     {{/each}}
 </div>
 
-{{!-- Pagination --}}
-{{#if pagination.totalPages}}
-<div class="d-flex justify-content-between align-items-center mt-4 mb-5">
-    <span class="small text-secondary">PAGE {{pagination.currentPage}} / {{pagination.totalPages}}</span>
-    <nav>
-        <ul class="pagination pagination-sm mb-0">
-            {{#if pagination.hasPrev}}
-            <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/rra-sales?page={{pagination.prevPage}}&buyerTIN={{buyerTIN}}&startDate={{startDate}}&endDate={{endDate}}&projectId={{projectId}}">Prev</a>
-            </li>
-            {{/if}}
-            
-            <li class="page-item active"><span class="page-link bg-primary border-primary">{{pagination.currentPage}}</span></li>
-            
-            {{#if pagination.hasNext}}
-            <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-white" href="/rra-sales?page={{pagination.nextPage}}&buyerTIN={{buyerTIN}}&startDate={{startDate}}&endDate={{endDate}}&projectId={{projectId}}">Next</a>
-            </li>
-            {{/if}}
-        </ul>
-    </nav>
-</div>
-{{/if}}
 
 {{!-- Import Modal --}}
 <div class="modal fade" id="uploadModal" tabindex="-1">
@@ -190,7 +195,8 @@
             <form action="/rra-sales/import" method="POST" enctype="multipart/form-data">
                 <div class="modal-body">
                     <label class="small text-secondary mb-1">Select the CSV file from RRA Portal</label>
-                    <input type="file" name="rraCsv" class="form-control bg-black text-white border-secondary" accept=".csv" required>
+                    <input type="file" name="rraCsv" class="form-control bg-black text-white border-secondary"
+                        accept=".csv" required>
                     <div class="mt-3 p-2 border border-secondary rounded bg-black small text-info">
                         <i class="fas fa-info-circle me-2"></i>Duplicated receipt numbers will be skipped automatically.
                     </div>
@@ -202,3 +208,38 @@
         </div>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        const table = $('#salesTable').DataTable({
+            dom: 'Brtip', // Hide default search box 'f'
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="fas fa-file-excel me-1"></i> DOWNLOAD EXCEL',
+                    className: 'btn btn-success btn-sm mb-3 fw-bold me-2',
+                    title: 'Sales Report',
+                    exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
+                }
+            ],
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
+
+        // Custom search input connection
+        $('#customSearchInput').on('keyup', function () {
+            table.search(this.value).draw();
+        });
+    });
+</script>
