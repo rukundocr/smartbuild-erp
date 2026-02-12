@@ -1,4 +1,3 @@
-
 <div class="row align-items-center mb-5">
     <div class="col">
         <h1 class="fw-bold text-white">Business Overview</h1>
@@ -15,35 +14,73 @@
 {{!-- Stat Cards Section --}}
 <div class="row g-4 mb-5">
     <div class="col-md-4">
-        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-primary border-4" style="min-height: 130px;">
-            <p class="text-secondary small mb-1">CONTRACT PORTFOLIO</p>
-            <h3 class="fw-bold mb-0 text-white">{{totalProjectValue}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-primary border-4"
+            style="min-height: 130px;">
+            <p class="text-success small mb-1">CONTRACT PORTFOLIO <span class="fs-8 text-warning font-monospace">Active
+                    Projects</span></p>
+            <h3 class="fw-bold mb-0 text-white">{{totalProjectValue}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card p-4 shadow-sm border-0 bg-dark border-start border-danger border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">TOTAL EXPENSES</p>
-            <h3 class="fw-bold mb-0 text-danger">{{totalExpenses}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-danger">{{totalExpenses}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4" style="min-height: 130px;">
-            <p class="text-secondary small mb-1">VAT CREDIT (RRA)</p>
-            <h3 class="fw-bold mb-0 text-warning">{{totalPurchaseVAT}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4"
+            style="min-height: 130px;">
+            <p class="text-secondary small mb-1">VAT INPUT</p>
+            <h3 class="fw-bold mb-0 text-warning">{{totalPurchaseVAT}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card p-4 shadow-sm border-0 bg-dark border-start border-info border-4" style="min-height: 130px;">
             <p class="text-secondary small mb-1">TOTAL PURCHASES</p>
-            <h3 class="fw-bold mb-0 text-primary">{{totalPurchases}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-primary">{{totalPurchases}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-success border-4" style="min-height: 130px;">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-success border-4"
+            style="min-height: 130px;">
             <p class="text-secondary small mb-1">NET PURCHASES (PRE-TAX)</p>
-            <h3 class="fw-bold mb-0 text-info">{{totalPurchaseNet}} <span class="fs-6 text-secondary font-monospace">RWF</span></h3>
+            <h3 class="fw-bold mb-0 text-info">{{totalPurchaseNet}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
         </div>
     </div>
+
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4"
+            style="min-height: 130px;">
+            <p class="text-secondary small mb-1">VAT OUTPUT</p>
+            <h3 class="fw-bold mb-0 text-warning">{{totalSalesVAT}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4"
+            style="min-height: 130px;">
+            <p class="text-secondary small mb-1">NET SALES</p>
+            <h3 class="fw-bold mb-0 text-primary">{{totalSalesNet}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0 bg-dark border-start border-warning border-4"
+            style="min-height: 130px;">
+            <p class="text-secondary small mb-1">TOTAL SALES WITH VAT</p>
+            <h3 class="fw-bold mb-0 text-info">{{totalSales}} <span
+                    class="fs-6 text-secondary font-monospace">RWF</span></h3>
+        </div>
+    </div>
+
+
+
 </div>
 
 {{!-- Charts Section --}}
@@ -59,7 +96,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <div class="card bg-dark border-secondary p-4 shadow-sm">
             <h5 class="text-white fw-bold mb-4">Portfolio Allocation</h5>
@@ -76,7 +113,7 @@
 {{!-- Charting Scripts --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const dataInput = document.getElementById('chartDataStore');
         if (!dataInput || !dataInput.value) return;
 
@@ -104,18 +141,18 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: { backgroundColor: '#1a1a1a', titleColor: '#0dcaf0' }
                     },
                     scales: {
-                        y: { 
-                            grid: { color: '#333' }, 
-                            ticks: { color: '#888', font: { size: 10 } } 
+                        y: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#888', font: { size: 10 } }
                         },
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: '#888', font: { size: 10 } } 
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#888', font: { size: 10 } }
                         }
                     }
                 }
@@ -140,9 +177,9 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { color: '#888', font: { size: 11 }, padding: 15 } 
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#888', font: { size: 11 }, padding: 15 }
                         }
                     },
                     cutout: '75%'
@@ -158,6 +195,7 @@
     .stat-card {
         transition: transform 0.2s ease;
     }
+
     .stat-card:hover {
         transform: translateY(-5px);
     }

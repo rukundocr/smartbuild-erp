@@ -2,6 +2,7 @@ const Project = require('../models/Project');
 const Expense = require('../models/Expense');
 const { logAction } = require('../utils/logger');
 const PurchaseValue = require('../models/Purchase');
+const SaleValue = require('../models/RRASale');
 
 // 1. Dashboard Logic
 exports.getDashboard = async (req, res) => {
@@ -9,13 +10,18 @@ exports.getDashboard = async (req, res) => {
         const projects = await Project.find().lean();
         const expenses = await Expense.find().lean();
         const purchases = await PurchaseValue.find().lean();
-
+        const sales = await SaleValue.find().lean();
         // 1. Basic Stats
-        const totalProjectValue = projects.reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
+        const totalProjectValue = projects
+            .filter(p => p.status === 'Active')
+            .reduce((acc, curr) => acc + (curr.contractAmount || 0), 0);
         const totalExpenses = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
         const totalPurchases = purchases.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
         const totalPurchaseVAT = purchases.reduce((acc, curr) => acc + (curr.vat || 0), 0);
         const totalPurchaseNet = purchases.reduce((acc, curr) => acc + (curr.amountWithoutVAT || 0), 0);
+        const totalSalesVAT = sales.reduce((acc, curr) => acc + (curr.vatAmount || 0), 0);
+        const totalSalesNet = sales.reduce((acc, curr) => acc + (curr.totalAmountExclVAT || 0), 0);
+        let totalSales = totalSalesNet + totalSalesVAT;
 
         // 2. Data for Budget Distribution (Top 5 Projects)
         const budgetLabels = projects.slice(0, 5).map(p => p.projectName);
@@ -23,7 +29,7 @@ exports.getDashboard = async (req, res) => {
 
         // 3. Data for Monthly Spending (Line Chart)
         const monthlySpentMap = {};
-        
+
         const sortedExpenses = expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         sortedExpenses.forEach(exp => {
@@ -34,7 +40,7 @@ exports.getDashboard = async (req, res) => {
             }
         });
 
-        const expenseLabels = Object.keys(monthlySpentMap).slice(-6); 
+        const expenseLabels = Object.keys(monthlySpentMap).slice(-6);
         const expenseValues = expenseLabels.map(label => monthlySpentMap[label]);
 
         res.render('dashboard', {
@@ -44,6 +50,9 @@ exports.getDashboard = async (req, res) => {
             totalPurchases: totalPurchases.toLocaleString(),
             totalPurchaseVAT: totalPurchaseVAT.toLocaleString(),
             totalPurchaseNet: totalPurchaseNet.toLocaleString(),
+            totalSales: totalSales.toLocaleString(),
+            totalSalesVAT: totalSalesVAT.toLocaleString(),
+            totalSalesNet: totalSalesNet.toLocaleString(),
             projectCount: projects.length,
             chartData: JSON.stringify({
                 budgetLabels,
@@ -54,9 +63,9 @@ exports.getDashboard = async (req, res) => {
         });
     } catch (err) {
         console.error("Dashboard Error:", err);
-          res.status(500).render("500",{
-            layout:false,
-            message:"Dashboard Loading Error. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Dashboard Loading Error. something went wrong to our ends"
         });
     }
 };
@@ -66,7 +75,7 @@ exports.getProjects = async (req, res) => {
     try {
         const { search, status, projectId } = req.query;
         let query = {};
-        
+
         // Build Filter Query
         if (projectId) {
             query._id = projectId; // Direct selection from dropdown
@@ -79,7 +88,7 @@ exports.getProjects = async (req, res) => {
         const allProjectNames = await Project.find({}, 'projectName').sort({ projectName: 1 }).lean();
 
         const projectsRaw = await Project.find(query).sort({ createdAt: -1 }).lean();
-        
+
         let companyTotalContract = 0;
         let companyTotalSpent = 0;
 
@@ -87,9 +96,9 @@ exports.getProjects = async (req, res) => {
             const expenses = await Expense.find({ projectId: project._id }).lean();
             const totalSpent = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
             const remainingBalance = (project.contractAmount || 0) - totalSpent;
-            
-            const percentUsed = project.contractAmount > 0 
-                ? Math.min(Math.round((totalSpent / project.contractAmount) * 100), 100) 
+
+            const percentUsed = project.contractAmount > 0
+                ? Math.min(Math.round((totalSpent / project.contractAmount) * 100), 100)
                 : 0;
 
             companyTotalContract += (project.contractAmount || 0);
@@ -105,8 +114,8 @@ exports.getProjects = async (req, res) => {
             };
         }));
 
-        res.render('projects', { 
-            projects, 
+        res.render('projects', {
+            projects,
             allProjectNames,
             searchQuery: search,
             selectedStatus: status,
@@ -120,9 +129,9 @@ exports.getProjects = async (req, res) => {
         });
     } catch (err) {
         console.error("Error loading projects:", err);
-         res.status(500).render("500",{
-            layout:false,
-            message:"Error loading projects. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Error loading projects. something went wrong to our ends"
         });
     }
 };
@@ -140,9 +149,9 @@ exports.createProject = async (req, res) => {
         await logAction(req.user._id, 'CREATE', 'PROJECTS', newProject._id, `Created project "${projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-          res.status(500).render("500",{
-            layout:false,
-            message:"Creating a  project error. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Creating a  project error. something went wrong to our ends"
         });
     }
 };
@@ -154,9 +163,9 @@ exports.updateProject = async (req, res) => {
         await logAction(req.user._id, 'UPDATE', 'PROJECTS', project._id, `Updated project "${project.projectName}"`);
         res.redirect('/projects');
     } catch (err) {
-          res.status(500).render("500",{
-            layout:false,
-            message:"Error while updating project. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Error while updating project. something went wrong to our ends"
         });
     }
 };
@@ -171,9 +180,9 @@ exports.deleteProject = async (req, res) => {
         }
         res.redirect('/projects');
     } catch (err) {
-           res.status(500).render("500",{
-            layout:false,
-            message:"Error Deleting Project. something went wrong to our ends"
+        res.status(500).render("500", {
+            layout: false,
+            message: "Error Deleting Project. something went wrong to our ends"
         });
     }
 };
