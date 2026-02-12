@@ -46,13 +46,13 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
         item.specs || '-',
         item.unit || '-',
         item.qty,
-        item.unitPrice.toLocaleString() + " RWF",
-        item.totalPrice.toLocaleString() + " RWF"
+        item.unitPrice.toLocaleString() ,
+        item.totalPrice.toLocaleString(),
     ]);
 
     autoTable(doc, {
         startY: currentY + 7,
-        head: [['#', 'Item Description', 'Specifications', 'Unit', 'Qty', 'Unit Price', 'Total']],
+        head: [['#', 'Item Description', 'Specifications', 'Unit', 'Qty', 'Unit Price (RWF)', 'Total Price(RWF)']],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [0, 0, 0] },
