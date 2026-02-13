@@ -68,26 +68,24 @@
     </div>
 </div>
 
-
-
 {{!-- Summary Cards --}}
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card bg-dark border-secondary p-3 text-center shadow-sm">
-            <label class="small text-secondary">NET SALES</label>
-            <h4 class="text-warning fw-bold mb-0">{{formatCurrency totals.net}}</h4>
+            <label class="small text-secondary">NET SALES (RWF)</label>
+            <h4 class="text-warning fw-bold mb-0">{{formatNumber totals.net}}</h4>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card bg-dark border-secondary p-3 text-center shadow-sm border-info">
-            <label class="small text-info">VAT OUTPUT (18%)</label>
-            <h4 class="text-info fw-bold mb-0">{{formatCurrency totals.vat}}</h4>
+            <label class="small text-info">VAT OUTPUT (18%) (RWF)</label>
+            <h4 class="text-info fw-bold mb-0">{{formatNumber totals.vat}}</h4>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card bg-dark border-secondary p-3 text-center shadow-sm border-success">
-            <label class="small text-secondary">TOTAL WITH VAT</label>
-            <h4 class="text-success fw-bold mb-0">{{formatCurrency totals.total}}</h4>
+            <label class="small text-secondary">TOTAL WITH VAT (RWF)</label>
+            <h4 class="text-success fw-bold mb-0">{{formatNumber totals.total}}</h4>
         </div>
     </div>
 </div>
@@ -113,8 +111,9 @@
                     <th class="text-warning">CLIENT name / TIN</th>
                     <th class="text-warning">TIN</th>
                     <th class="text-warning">RECEIPT #</th>
-                    <th class="text-end text-warning">EXCL. VAT</th>
-                    <th class="text-end text-warning">VAT</th>
+                    <th class="text-end text-warning">EXCL. VAT (RWF)</th>
+                    <th class="text-end text-info">VAT (RWF)</th>
+                    <th class="text-end text-success">TOTAL (RWF)</th>
                     <th class="text-end px-3 text-warning">PROJECT LINKING</th>
                 </tr>
             </thead>
@@ -127,8 +126,11 @@
                     <td class="small text-white">{{this.buyerTIN}}</td>
 
                     <td class="text-info fw-bold font-monospace">{{this.receiptNumber}}</td>
-                    <td class="text-end fw-bold">{{formatCurrency this.totalAmountExclVAT}}</td>
-                    <td class="text-end text-info fw-bold">{{formatCurrency this.vatAmount}}</td>
+                    <td class="text-end fw-bold">{{formatNumber this.totalAmountExclVAT}}</td>
+                    <td class="text-end text-info fw-bold">{{formatNumber this.vatAmount}}</td>
+                    <td class="text-end text-success fw-bold">{{formatNumber this.totalAmountWithVAT}}</td>
+
+                    </td>
                     <td class="text-end px-3">
                         <form action="/rra-sales/link/{{this._id}}" method="POST"
                             class="d-flex justify-content-end align-items-center">
@@ -229,7 +231,7 @@
                     text: '<i class="fas fa-file-excel me-1"></i> DOWNLOAD EXCEL',
                     className: 'btn btn-success btn-sm mb-3 fw-bold me-2',
                     title: 'Sales Report',
-                    exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
+                    exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
                 }
             ],
             order: [[0, 'desc']],

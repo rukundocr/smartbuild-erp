@@ -36,10 +36,16 @@ exports.getSalesPage = async (req, res) => {
             .sort({ invoiceDate: -1 })
             .lean();
 
+        // Calculate total for each line
+        const salesWithTotal = sales.map(s => ({
+            ...s,
+            totalAmountWithVAT: (s.totalAmountExclVAT || 0) + (s.vatAmount || 0)
+        }));
+
         const projects = await Project.find().lean();
 
         res.render('sales', {
-            sales,
+            sales: salesWithTotal,
             projects,
             totals,
             startDate,

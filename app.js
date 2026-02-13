@@ -43,7 +43,7 @@ app.use(flash());
 app.use((req, res, next) => {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg'); // This maps to {{error_msg}} in HBS
-    res.locals.error = req.flash('error'); 
+    res.locals.error = req.flash('error');
     next();
 });
 
@@ -60,89 +60,96 @@ app.engine('hbs', engine({
     defaultLayout: 'main',
     layoutsDir: path.join(__dirname, 'views/layouts'),
     partialsDir: path.join(__dirname, 'views/partials'),
-    
+
     // FIX: This allows Handlebars to access Mongoose properties like "role"
     runtimeOptions: {
         allowProtoPropertiesByDefault: true,
         allowProtoMethodsByDefault: true,
     },
-    
+
     helpers: {
-    gt: (a, b) => a > b,
+        gt: (a, b) => a > b,
 
-    // Used for matching IDs in project/user filters
-    toString: (val) => val ? val.toString() : '',
+        // Used for matching IDs in project/user filters
+        toString: (val) => val ? val.toString() : '',
 
-    // Added substring helper for user initials (e.g., "John" -> "J")
-    substring: function (str, start, len) {
-        if (str && typeof str === 'string') {
-            return str.substring(start, len);
+        // Added substring helper for user initials (e.g., "John" -> "J")
+        substring: function (str, start, len) {
+            if (str && typeof str === 'string') {
+                return str.substring(start, len);
+            }
+            return '';
+        },
+
+        // Improved equality check
+        eq: function (a, b) {
+            if (a === undefined || b === undefined || a === null || b === null) return false;
+            return a.toString() === b.toString();
+        },
+
+        // REFINED: Handles formatting and prevents the 'toLocaleString' TypeError
+        formatCurrency: function (n) {
+            if (n === undefined || n === null) return '0 RWF';
+            // Ensure n is a number
+            const num = typeof n === 'number' ? n : parseFloat(n);
+            if (isNaN(num)) return '0 RWF';
+
+            return new Intl.NumberFormat('en-US').format(num) + ' RWF';
+        },
+
+        formatDate: function (date) {
+            if (!date) return "";
+            return new Intl.DateTimeFormat('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(date));
+        },
+
+        /**
+         * NEW: Formats date specifically for HTML <input type="date">
+         * Converts Date to YYYY-MM-DD format
+         */
+        formatDateHTML: function (date) {
+            if (!date) return "";
+            try {
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return "";
+
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            } catch (err) {
+                return "";
+            }
+        },
+
+        // --- NEW LOAN HELPERS ---
+
+        // Calculates remaining balance: (Total - Paid)
+        subtract: function (a, b) {
+            const result = (parseFloat(a) || 0) - (parseFloat(b) || 0);
+            return new Intl.NumberFormat('en-US').format(result) + ' RWF';
+        },
+
+        // Calculates percentage for progress bars (Paid / Total * 100)
+        percentage: function (partial, total) {
+            if (!total || total === 0) return 0;
+            const p = (parseFloat(partial) / parseFloat(total)) * 100;
+            return Math.min(100, p).toFixed(0);
+        },
+
+        formatNumber: function (n) {
+            if (n === undefined || n === null) return '0';
+            const num = typeof n === 'number' ? n : parseFloat(n);
+            if (isNaN(num)) return '0';
+            return new Intl.NumberFormat('en-US').format(num);
         }
-        return '';
-    },
-
-    // Improved equality check
-    eq: function (a, b) {
-        if (a === undefined || b === undefined || a === null || b === null) return false;
-        return a.toString() === b.toString();
-    },
-
-    // REFINED: Handles formatting and prevents the 'toLocaleString' TypeError
-    formatCurrency: function (n) {
-        if (n === undefined || n === null) return '0 RWF';
-        // Ensure n is a number
-        const num = typeof n === 'number' ? n : parseFloat(n);
-        if (isNaN(num)) return '0 RWF';
-        
-        return new Intl.NumberFormat('en-US').format(num) + ' RWF';
-    },
-
-    formatDate: function (date) {
-        if (!date) return "";
-        return new Intl.DateTimeFormat('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }).format(new Date(date));
-    },
-
-    /**
-     * NEW: Formats date specifically for HTML <input type="date">
-     * Converts Date to YYYY-MM-DD format
-     */
-    formatDateHTML: function (date) {
-        if (!date) return "";
-        try {
-            const d = new Date(date);
-            if (isNaN(d.getTime())) return ""; 
-            
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            
-            return `${year}-${month}-${day}`;
-        } catch (err) {
-            return "";
-        }
-    },
-
-    // --- NEW LOAN HELPERS ---
-
-    // Calculates remaining balance: (Total - Paid)
-    subtract: function (a, b) {
-        const result = (parseFloat(a) || 0) - (parseFloat(b) || 0);
-        return new Intl.NumberFormat('en-US').format(result) + ' RWF';
-    },
-
-    // Calculates percentage for progress bars (Paid / Total * 100)
-    percentage: function (partial, total) {
-        if (!total || total === 0) return 0;
-        const p = (parseFloat(partial) / parseFloat(total)) * 100;
-        return Math.min(100, p).toFixed(0);
     }
-}
 }));
 
 
@@ -176,7 +183,7 @@ app.use('/', require('./routes/projects')); // Dashboard at root
 // ... under your other routes
 app.use('/', require('./routes/expenses'));
 app.use('/invoices', invoiceRoutes);
-app.use('/purchases', purchaseRoutes); 
+app.use('/purchases', purchaseRoutes);
 app.use('/audit', auditRoutes);
 app.use('/auth', require('./routes/auth'));
 app.use('/purchases', require('./routes/purchases'));
@@ -189,7 +196,7 @@ app.use('/casual-workers', require('./routes/casualWorkers'));
 
 // This middleware triggers only if none of the routes above match the URL
 app.use((req, res, next) => {
-    res.status(404).render('404', { 
+    res.status(404).render('404', {
         layout: false, // or false if you don't want the sidebar/nav visible
         title: "Page Not Found | SmartBuild"
     });
@@ -198,9 +205,9 @@ app.use((req, res, next) => {
 // --- OPTIONAL: GLOBAL ERROR HANDLER (500) ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).render('500', { 
+    res.status(500).render('500', {
         layout: false,
-        message: 'Something went wrong on our end.' 
+        message: 'Something went wrong on our end.'
     });
 });
 const PORT = process.env.PORT || 3000;
