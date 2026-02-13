@@ -1,7 +1,8 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold text-white mb-1">Project Sites</h2>
-        <p class="text-info small mb-0"><i class="fas fa-chart-line me-1"></i> Tracking contract value vs. actual spending</p>
+        <p class="text-info small mb-0"><i class="fas fa-chart-line me-1"></i> Tracking contract value vs. actual
+            spending</p>
     </div>
     <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#projectModal">
         <i class="fas fa-plus-circle me-1"></i> NEW PROJECT
@@ -12,10 +13,12 @@
     <div class="card-body p-3">
         <form action="/projects" method="GET" class="row g-2">
             <div class="col-12 col-md-3">
-                <select name="projectId" class="form-select bg-black text-white border-secondary" onchange="this.form.submit()">
+                <select name="projectId" class="form-select bg-black text-white border-secondary"
+                    onchange="this.form.submit()">
                     <option value="">-- Quick Select Project --</option>
                     {{#each allProjectNames}}
-                    <option value="{{this._id}}" {{#if (eq (toString this._id) (toString ../selectedProjectId))}}selected{{/if}}>
+                    <option value="{{this._id}}" {{#if (eq (toString this._id) (toString
+                        ../selectedProjectId))}}selected{{/if}}>
                         {{this.projectName}}
                     </option>
                     {{/each}}
@@ -24,17 +27,19 @@
 
             <div class="col-12 col-md-4">
                 <div class="input-group">
-                    <span class="input-group-text bg-black border-secondary text-secondary"><i class="fas fa-search"></i></span>
-                    <input type="text" name="search" class="form-control bg-dark text-white border-secondary" placeholder="Search name..." value="{{searchQuery}}">
+                    <span class="input-group-text bg-black border-secondary text-secondary"><i
+                            class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control bg-dark text-white border-secondary"
+                        placeholder="Search name..." value="{{searchQuery}}">
                 </div>
             </div>
 
             <div class="col-6 col-md-3">
                 <select name="status" class="form-select bg-dark text-white border-secondary">
                     <option value="">All Statuses</option>
-                    <option value="Active" {{#if (eq selectedStatus 'Active')}}selected{{/if}}>Active</option>
-                    <option value="Completed" {{#if (eq selectedStatus 'Completed')}}selected{{/if}}>Completed</option>
-                    <option value="On Hold" {{#if (eq selectedStatus 'On Hold')}}selected{{/if}}>On Hold</option>
+                    <option value="Active" {{#if (eq selectedStatus 'Active' )}}selected{{/if}}>Active</option>
+                    <option value="Completed" {{#if (eq selectedStatus 'Completed' )}}selected{{/if}}>Completed</option>
+                    <option value="On Hold" {{#if (eq selectedStatus 'On Hold' )}}selected{{/if}}>On Hold</option>
                 </select>
             </div>
 
@@ -49,8 +54,10 @@
 <div class="row g-3">
     {{#each projects}}
     <div class="col-12 col-md-6 col-lg-4">
-        <div class="card bg-dark border-secondary h-100 shadow-sm border-top-0" style="border-right: 1px solid #444; border-left: 1px solid #444; border-bottom: 4px solid var(--bs-{{this.statusColor}});">
-            <div class="card-header border-secondary d-flex justify-content-between align-items-start pt-3 bg-transparent">
+        <div class="card bg-dark border-secondary h-100 shadow-sm border-top-0"
+            style="border-right: 1px solid #444; border-left: 1px solid #444; border-bottom: 4px solid var(--bs-{{this.statusColor}});">
+            <div
+                class="card-header border-secondary d-flex justify-content-between align-items-start pt-3 bg-transparent">
                 <div>
                     <h5 class="fw-bold text-white mb-0">{{this.projectName}}</h5>
                     <span class="badge bg-black text-info border border-secondary mt-1">{{this.clientName}}</span>
@@ -60,37 +67,46 @@
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary shadow">
-                        <li><button class="dropdown-item small" data-bs-toggle="modal" data-bs-target="#editProject{{this._id}}"><i class="fas fa-edit me-2 text-warning"></i>Edit Details</button></li>
-                        <li><a class="dropdown-item small" href="/expenses?projectId={{this._id}}"><i class="fas fa-receipt me-2 text-info"></i>View Expenses</a></li>
-                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><button class="dropdown-item small" data-bs-toggle="modal"
+                                data-bs-target="#editProject{{this._id}}"><i
+                                    class="fas fa-edit me-2 text-warning"></i>Edit Details</button></li>
+                        <li><a class="dropdown-item small" href="/expenses?projectId={{this._id}}"><i
+                                    class="fas fa-receipt me-2 text-info"></i>View Expenses</a></li>
                         <li>
-                            <form action="/projects/delete/{{this._id}}" method="POST" onsubmit="return confirm('Delete this project?')">
-                                <button class="dropdown-item small text-danger fw-bold"><i class="fas fa-trash me-2"></i>Delete Project</button>
+                            <hr class="dropdown-divider border-secondary">
+                        </li>
+                        <li>
+                            <form action="/projects/delete/{{this._id}}" method="POST"
+                                onsubmit="return confirm('Delete this project?')">
+                                <button class="dropdown-item small text-danger fw-bold"><i
+                                        class="fas fa-trash me-2"></i>Delete Project</button>
                             </form>
                         </li>
                     </ul>
                 </div>
             </div>
-            
+
             <div class="card-body py-4">
                 <div class="mb-4">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-secondary small">Budget Usage</span>
-                        <span class="small fw-bold {{#if this.isOverBudget}}text-danger{{else}}text-white{{/if}}">{{this.percentUsed}}%</span>
+                        <span
+                            class="small fw-bold {{#if this.isOverBudget}}text-danger{{else}}text-white{{/if}}">{{this.percentUsed}}%</span>
                     </div>
                     <div class="progress bg-black border border-secondary" style="height: 10px;">
-                        <div class="progress-bar bg-{{this.statusColor}} shadow-sm" role="progressbar" style="width: {{this.percentUsed}}%;"></div>
+                        <div class="progress-bar bg-{{this.statusColor}} shadow-sm" role="progressbar"
+                            style="width: {{this.percentUsed}}%;"></div>
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="x-small text-secondary text-uppercase d-block">Contract Value</label>
-                        <span class="fw-bold text-white">{{formatCurrency this.contractAmount}}</span>
+                        <span class="fw-bold text-white">{{formatNumber this.contractAmount}}</span>
                     </div>
                     <div class="col-6 text-end">
-                        <label class="x-small text-secondary text-uppercase d-block">Total Spent</label>
-                        <span class="fw-bold text-danger">{{formatCurrency this.totalSpent}}</span>
+                        <label class="x-small text-secondary text-uppercase d-block">Total Invoiced</label>
+                        <span class="fw-bold text-info">{{formatNumber this.totalInvoiced}}</span>
                     </div>
                 </div>
 
@@ -100,9 +116,12 @@
                 </div>
             </div>
 
-            <div class="card-footer border-secondary bg-transparent d-flex justify-content-between align-items-center small py-3">
-                <span class="text-secondary"><i class="fas fa-calendar-alt me-1"></i> {{formatDate this.startDate}}</span>
-                <span class="badge {{#if (eq this.status 'Active')}}bg-success{{else}}bg-secondary{{/if}}">{{this.status}}</span>
+            <div
+                class="card-footer border-secondary bg-transparent d-flex justify-content-between align-items-center small py-3">
+                <span class="text-secondary"><i class="fas fa-calendar-alt me-1"></i> {{formatDate
+                    this.startDate}}</span>
+                <span
+                    class="badge {{#if (eq this.status 'Active')}}bg-success{{else}}bg-secondary{{/if}}">{{this.status}}</span>
             </div>
         </div>
     </div>
@@ -118,34 +137,47 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="small text-secondary mb-1">Project Name</label>
-                            <input type="text" name="projectName" class="form-control bg-dark text-white border-secondary" value="{{this.projectName}}" required>
+                            <input type="text" name="projectName"
+                                class="form-control bg-dark text-white border-secondary" value="{{this.projectName}}"
+                                required>
                         </div>
                         <div class="mb-3">
                             <label class="small text-secondary mb-1">Client Name</label>
-                            <input type="text" name="clientName" class="form-control bg-dark text-white border-secondary" value="{{this.clientName}}" required>
+                            <input type="text" name="clientName"
+                                class="form-control bg-dark text-white border-secondary" value="{{this.clientName}}"
+                                required>
                         </div>
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="small text-secondary mb-1">Contract Amount (RWF)</label>
-                                <input type="number" name="contractAmount" class="form-control bg-dark text-white border-secondary" value="{{this.contractAmount}}" required>
+                                <input type="number" name="contractAmount"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    value="{{this.contractAmount}}" required>
                             </div>
                             <div class="col-6">
                                 <label class="small text-secondary mb-1">Status</label>
                                 <select name="status" class="form-select bg-dark text-white border-secondary">
-                                    <option value="Active" {{#if (eq this.status 'Active')}}selected{{/if}}>Active</option>
-                                    <option value="Completed" {{#if (eq this.status 'Completed')}}selected{{/if}}>Completed</option>
-                                    <option value="On Hold" {{#if (eq this.status 'On Hold')}}selected{{/if}}>On Hold</option>
+                                    <option value="Active" {{#if (eq this.status 'Active' )}}selected{{/if}}>Active
+                                    </option>
+                                    <option value="Completed" {{#if (eq this.status 'Completed' )}}selected{{/if}}>
+                                        Completed</option>
+                                    <option value="On Hold" {{#if (eq this.status 'On Hold' )}}selected{{/if}}>On Hold
+                                    </option>
                                 </select>
                             </div>
                         </div>
                         <div class="row g-2">
                             <div class="col-6">
                                 <label class="small text-secondary mb-1">Start Date</label>
-                                <input type="date" name="startDate" class="form-control bg-dark text-white border-secondary" value="{{formatDateHTML this.startDate}}">
+                                <input type="date" name="startDate"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    value="{{formatDateHTML this.startDate}}">
                             </div>
                             <div class="col-6">
                                 <label class="small text-secondary mb-1">Deadline</label>
-                                <input type="date" name="deadline" class="form-control bg-dark text-white border-secondary" value="{{formatDateHTML this.deadline}}">
+                                <input type="date" name="deadline"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    value="{{formatDateHTML this.deadline}}">
                             </div>
                         </div>
                     </div>
@@ -176,12 +208,12 @@
             <span class="fw-bold text-white">{{formatCurrency companyTotals.contract}}</span>
         </div>
         <div class="col-6 col-md-3 border-start border-secondary">
-            <label class="x-small text-secondary text-uppercase d-block">Spent Total</label>
-            <span class="fw-bold text-danger">{{formatCurrency companyTotals.spent}}</span>
+            <label class="x-small text-secondary text-uppercase d-block">Invoiced Total</label>
+            <span class="fw-bold text-info">{{formatNumber companyTotals.invoiced}}</span>
         </div>
         <div class="col-12 col-md-3 border-start border-secondary">
             <label class="x-small text-secondary text-uppercase d-block">Net Balance</label>
-            <h4 class="fw-bold text-{{companyTotals.healthColor}} mb-0">{{formatCurrency companyTotals.balance}}</h4>
+            <h4 class="fw-bold text-{{companyTotals.healthColor}} mb-0">{{formatNumber companyTotals.balance}}</h4>
         </div>
     </div>
 </div>
@@ -199,24 +231,29 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="small text-secondary mb-1">Project Name</label>
-                        <input type="text" name="projectName" class="form-control bg-dark text-white border-secondary" required>
+                        <input type="text" name="projectName" class="form-control bg-dark text-white border-secondary"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label class="small text-secondary mb-1">Client Name</label>
-                        <input type="text" name="clientName" class="form-control bg-dark text-white border-secondary" required>
+                        <input type="text" name="clientName" class="form-control bg-dark text-white border-secondary"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label class="small text-secondary mb-1">Contract Amount (RWF)</label>
-                        <input type="number" name="contractAmount" class="form-control bg-dark text-white border-secondary" required>
+                        <input type="number" name="contractAmount"
+                            class="form-control bg-dark text-white border-secondary" required>
                     </div>
                     <div class="row g-2">
                         <div class="col-6">
                             <label class="small text-secondary mb-1">Start Date</label>
-                            <input type="date" name="startDate" class="form-control bg-dark text-white border-secondary" required>
+                            <input type="date" name="startDate" class="form-control bg-dark text-white border-secondary"
+                                required>
                         </div>
                         <div class="col-6">
                             <label class="small text-secondary mb-1">Deadline</label>
-                            <input type="date" name="deadline" class="form-control bg-dark text-white border-secondary" required>
+                            <input type="date" name="deadline" class="form-control bg-dark text-white border-secondary"
+                                required>
                         </div>
                     </div>
                 </div>

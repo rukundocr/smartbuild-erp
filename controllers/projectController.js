@@ -90,27 +90,27 @@ exports.getProjects = async (req, res) => {
         const projectsRaw = await Project.find(query).sort({ createdAt: -1 }).lean();
 
         let companyTotalContract = 0;
-        let companyTotalSpent = 0;
+        let companyTotalInvoiced = 0;
 
         const projects = await Promise.all(projectsRaw.map(async (project) => {
-            const expenses = await Expense.find({ projectId: project._id }).lean();
-            const totalSpent = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-            const remainingBalance = (project.contractAmount || 0) - totalSpent;
+            const sales = await SaleValue.find({ projectId: project._id }).lean();
+            const totalInvoiced = sales.reduce((acc, curr) => acc + (curr.totalAmountExclVAT || 0) + (curr.vatAmount || 0), 0);
+            const remainingBalance = (project.contractAmount || 0) - totalInvoiced;
 
             const percentUsed = project.contractAmount > 0
-                ? Math.min(Math.round((totalSpent / project.contractAmount) * 100), 100)
+                ? Math.min(Math.round((totalInvoiced / project.contractAmount) * 100), 100)
                 : 0;
 
             companyTotalContract += (project.contractAmount || 0);
-            companyTotalSpent += totalSpent;
+            companyTotalInvoiced += totalInvoiced;
 
             return {
                 ...project,
-                totalSpent,
+                totalInvoiced,
                 remainingBalance,
                 percentUsed,
-                isOverBudget: totalSpent > project.contractAmount,
-                statusColor: totalSpent > project.contractAmount ? 'danger' : (percentUsed > 85 ? 'warning' : 'success')
+                isOverBudget: totalInvoiced > project.contractAmount,
+                statusColor: totalInvoiced > project.contractAmount ? 'danger' : (percentUsed > 85 ? 'warning' : 'success')
             };
         }));
 
@@ -122,9 +122,9 @@ exports.getProjects = async (req, res) => {
             selectedProjectId: projectId,
             companyTotals: {
                 contract: companyTotalContract,
-                spent: companyTotalSpent,
-                balance: companyTotalContract - companyTotalSpent,
-                healthColor: (companyTotalContract - companyTotalSpent) < 0 ? 'danger' : 'info'
+                invoiced: companyTotalInvoiced,
+                balance: companyTotalContract - companyTotalInvoiced,
+                healthColor: (companyTotalContract - companyTotalInvoiced) < 0 ? 'danger' : 'info'
             }
         });
     } catch (err) {
