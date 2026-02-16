@@ -5,7 +5,8 @@ const { ensureAuthenticated, ensureAdmin } = require('../middleware/auth'); // C
 
 // If loanController.getLoans is undefined, this line throws your error
 router.get('/', ensureAuthenticated, loanController.getLoans);
-router.post('/create', ensureAuthenticated,loanController.createLoan);
+router.get('/history/:id', ensureAuthenticated, loanController.getLoanHistory);
+router.post('/create', ensureAuthenticated, loanController.createLoan);
 router.post('/payment/:id', ensureAuthenticated, loanController.addPayment);
 router.post('/delete/:id', ensureAuthenticated, ensureAdmin, loanController.deleteLoan);
 router.get('/export-pdf', ensureAuthenticated, loanController.exportLoansPDF);

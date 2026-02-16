@@ -1,0 +1,70 @@
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-white mb-1">Repayment History</h2>
+        <p class="text-secondary mb-0">
+            <span class="text-info fw-bold">{{loan.lenderName}}</span>
+            <span class="mx-2">|</span>
+            <span class="small">{{loan.description}}</span>
+        </p>
+    </div>
+    <div>
+        <a href="/loans" class="btn btn-outline-light fw-bold shadow-sm">
+            <i class="fas fa-arrow-left me-1"></i> BACK TO LOANS
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 shadow-sm">
+            <span class="text-secondary small uppercase fw-bold">Total Loan Amount</span>
+            <h3 class="text-white fw-bold mb-0 mt-1">{{formatCurrency loan.totalAmount}}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 shadow-sm border-start border-4 border-success">
+            <span class="text-success small uppercase fw-bold">Total Paid</span>
+            <h3 class="text-white fw-bold mb-0 mt-1">{{formatCurrency loan.amountPaid}}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary p-3 shadow-sm border-start border-4 border-warning">
+            <span class="text-warning small uppercase fw-bold">Remaining Balance</span>
+            <h3 class="text-white fw-bold mb-0 mt-1">{{subtract loan.totalAmount loan.amountPaid}}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary shadow-lg overflow-hidden">
+    <div class="card-header bg-dark border-secondary">
+        <h5 class="custom-card-title mb-0 text-white">Transaction Log</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead class="bg-secondary text-white">
+                <tr class="small border-bottom border-secondary">
+                    <th class="py-3 px-3">DATE</th>
+                    <th class="py-3">NOTE / REFERENCE</th>
+                    <th class="py-3 text-end px-3">AMOUNT PAID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#if loan.payments.length}}
+                {{#each loan.payments}}
+                <tr class="align-middle border-bottom border-secondary">
+                    <td class="px-3 text-secondary">{{formatDate this.date}}</td>
+                    <td class="text-white">{{this.note}}</td>
+                    <td class="text-end px-3 fw-bold text-success">{{formatCurrency this.amount}}</td>
+                </tr>
+                {{/each}}
+                {{else}}
+                <tr>
+                    <td colspan="3" class="text-center py-5">
+                        <p class="text-secondary mb-0">No repayment transactions recorded yet.</p>
+                    </td>
+                </tr>
+                {{/if}}
+            </tbody>
+        </table>
+    </div>
+</div>
