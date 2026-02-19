@@ -7,7 +7,7 @@ const { logAction } = require('../utils/logger'); // Import the logger
 exports.getAllInvoices = async (req, res) => {
     try {
         const invoices = await Invoice.find()
-            .populate('projectId') 
+            .populate('projectId')
             .sort({ createdAt: -1 })
             .lean();
         res.render('invoices/list', { invoices });
@@ -21,7 +21,7 @@ exports.createInvoice = async (req, res) => {
     try {
         const { projectId, clientName, siteLocation, items } = req.body;
         const itemsArray = Array.isArray(items) ? items : Object.values(items || {});
-        
+
         let subtotal = 0;
         const processedItems = itemsArray.map(item => {
             const total = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
@@ -34,8 +34,8 @@ exports.createInvoice = async (req, res) => {
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const prefix = `INV-${year}/${month}/`;
 
-        const lastInvoice = await Invoice.findOne({ 
-            invoiceNumber: new RegExp(`^${prefix}`) 
+        const lastInvoice = await Invoice.findOne({
+            invoiceNumber: new RegExp(`^${prefix}`)
         }).sort({ createdAt: -1 });
 
         let sequence = 1;
@@ -74,9 +74,9 @@ exports.createInvoice = async (req, res) => {
         res.redirect('/invoices');
     } catch (err) {
         console.error("Invoice Error:", err);
-        res.status(500).render("500",{
-        layout: false,
-        message: 'Error while creating invoice . Something went wrong on our end.' 
+        res.status(500).render("500", {
+            layout: false,
+            message: 'Error while creating invoice . Something went wrong on our end.'
         });
     }
 };
@@ -86,41 +86,45 @@ exports.updateInvoice = async (req, res) => {
     try {
         const { clientName, siteLocation, items } = req.body;
         const itemsArray = Array.isArray(items) ? items : Object.values(items || {});
-        
+
         let subtotal = 0;
         const processedItems = itemsArray.map(item => {
             const total = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
             subtotal += total;
             return { ...item, totalPrice: total };
         });
-        
+
         const vat = subtotal * 0.18;
         const grandTotal = subtotal + vat;
 
+        // Fetch old invoice for before/after audit trail
+        const oldInvoice = await Invoice.findById(req.params.id);
+
         const updatedInvoice = await Invoice.findByIdAndUpdate(req.params.id, {
-            clientName, 
-            siteLocation, 
+            clientName,
+            siteLocation,
             items: processedItems,
-            subtotal, 
-            vatAmount: vat, 
+            subtotal,
+            vatAmount: vat,
             grandTotal: grandTotal
         }, { new: true });
 
-        // SOLID AUDIT LOG
+        const changes = [];
+        if (oldInvoice.clientName !== clientName) changes.push(`Client: "${oldInvoice.clientName}" → "${clientName}"`);
+        if (oldInvoice.siteLocation !== siteLocation) changes.push(`Location: "${oldInvoice.siteLocation}" → "${siteLocation}"`);
+        if (Math.round(oldInvoice.grandTotal) !== Math.round(grandTotal)) changes.push(`Total: ${oldInvoice.grandTotal.toLocaleString()} → ${grandTotal.toLocaleString()} RWF`);
+
         await logAction(
-            req.user._id,
-            'UPDATE',
-            'INVOICES',
-            req.params.id,
-            `Modified Invoice ${updatedInvoice.invoiceNumber}. New Total: ${grandTotal.toLocaleString()} RWF.`
+            req.user._id, 'UPDATE', 'INVOICES', req.params.id,
+            `Modified Invoice ${updatedInvoice.invoiceNumber}. Changes: ${changes.length > 0 ? changes.join(', ') : 'Items updated'}`
         );
 
         res.redirect('/invoices');
-    } catch (err) { 
-     
-        res.status(500).render("500",{
-        layout: false,
-        message: 'Updating error. Something went wrong on our end.' 
+    } catch (err) {
+
+        res.status(500).render("500", {
+            layout: false,
+            message: 'Updating error. Something went wrong on our end.'
         });
     }
 };
@@ -130,7 +134,7 @@ exports.updateInvoice = async (req, res) => {
 exports.downloadInvoicePDF = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id)
-            .populate('projectId') 
+            .populate('projectId')
             .lean();
 
         if (!invoice) return res.status(404).send("Invoice not found");
@@ -144,12 +148,12 @@ exports.downloadInvoicePDF = async (req, res) => {
         );
 
         // ADD 'await' HERE
-        const pdfBuffer = await generateInvoicePDF(invoice); 
-        
+        const pdfBuffer = await generateInvoicePDF(invoice);
+
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Invoice-${invoice.invoiceNumber}.pdf`);
         res.send(Buffer.from(pdfBuffer));
-    } catch (err) { 
+    } catch (err) {
         console.error(err);
         res.status(500).render("500", { layout: false, message: 'Error Generating pdf.' });
     }
@@ -175,10 +179,10 @@ exports.deleteInvoice = async (req, res) => {
             );
         }
         res.redirect('/invoices');
-    } catch (err) { 
-         res.status(500).render("500",{
-        layout: false,
-        message: 'Error occured while deleting invoices. Something went wrong on our end.' 
+    } catch (err) {
+        res.status(500).render("500", {
+            layout: false,
+            message: 'Error occured while deleting invoices. Something went wrong on our end.'
         });
     }
 };
@@ -189,9 +193,9 @@ exports.getInvoiceForm = async (req, res) => {
         const projects = await Project.find().lean();
         res.render('invoices/new', { projects });
     } catch (err) {
-        res.status(500).render("500",{
-        layout: false,
-        message: 'Error loading form  . Something went wrong on our end.' 
+        res.status(500).render("500", {
+            layout: false,
+            message: 'Error loading form  . Something went wrong on our end.'
         });
     }
 };
@@ -202,10 +206,10 @@ exports.getEditInvoice = async (req, res) => {
         const projects = await Project.find().lean();
         res.render('invoices/edit', { invoice, projects });
     } catch (err) {
-    
-        res.status(500).render("500",{
-        layout: false,
-        message: 'error loading edit form . Something went wrong on our end.' 
+
+        res.status(500).render("500", {
+            layout: false,
+            message: 'error loading edit form . Something went wrong on our end.'
         });
     }
 };
@@ -218,16 +222,16 @@ exports.verifyInvoicePublic = async (req, res) => {
             .lean();
 
         if (!invoice) {
-            return res.status(404).render('public/verify-error', { 
+            return res.status(404).render('public/verify-error', {
                 layout: false,
-                message: "Invalid Invoice Reference" 
+                message: "Invalid Invoice Reference"
             });
         }
 
         // Render a dedicated public verification page (no sidebar/admin links)
-        res.render('public/verify-invoice', { 
-            invoice, 
-            layout: false, 
+        res.render('public/verify-invoice', {
+            invoice,
+            layout: false,
             title: 'Verify Invoice | SmartBuild LTD'
         });
     } catch (err) {

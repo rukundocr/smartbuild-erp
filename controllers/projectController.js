@@ -146,7 +146,8 @@ exports.createProject = async (req, res) => {
             description, startDate, deadline,
             createdBy: req.user._id
         });
-        await logAction(req.user._id, 'CREATE', 'PROJECTS', newProject._id, `Created project "${projectName}"`);
+        await logAction(req.user._id, 'CREATE', 'PROJECTS', newProject._id,
+            `Created project "${projectName}" for client "${clientName}". Contract: ${parseFloat(contractAmount).toLocaleString()} RWF. Status: ${status || 'Active'}`);
         res.redirect('/projects');
     } catch (err) {
         res.status(500).render("500", {
@@ -159,8 +160,21 @@ exports.createProject = async (req, res) => {
 // 4. Update Project
 exports.updateProject = async (req, res) => {
     try {
+        const { projectName, clientName, contractAmount, status, description } = req.body;
+
+        // Fetch old values for audit trail
+        const oldProject = await Project.findById(req.params.id);
+
         const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        await logAction(req.user._id, 'UPDATE', 'PROJECTS', project._id, `Updated project "${project.projectName}"`);
+
+        const changes = [];
+        if (oldProject.projectName !== projectName) changes.push(`Name: "${oldProject.projectName}" → "${projectName}"`);
+        if (oldProject.clientName !== clientName) changes.push(`Client: "${oldProject.clientName}" → "${clientName}"`);
+        if (Number(oldProject.contractAmount) !== Number(contractAmount)) changes.push(`Contract: ${Number(oldProject.contractAmount).toLocaleString()} → ${Number(contractAmount).toLocaleString()} RWF`);
+        if (oldProject.status !== status) changes.push(`Status: "${oldProject.status}" → "${status}"`);
+
+        await logAction(req.user._id, 'UPDATE', 'PROJECTS', project._id,
+            `Updated project "${project.projectName}". Changes: ${changes.length > 0 ? changes.join(', ') : 'Minor field update'}`);
         res.redirect('/projects');
     } catch (err) {
         res.status(500).render("500", {

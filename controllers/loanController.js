@@ -61,7 +61,8 @@ exports.createLoan = async (req, res) => {
             description,
             dateBorrowed
         });
-        await logAction(req.user._id, 'CREATE', 'LOANS', loan._id, `Registered loan from ${lenderName}`);
+        await logAction(req.user._id, 'CREATE', 'LOANS', loan._id,
+            `Registered new loan from "${lenderName}". Amount: ${parseFloat(totalAmount).toLocaleString()} RWF. Description: ${description || 'N/A'}`);
         res.redirect('/loans');
     } catch (err) {
         console.error(err);
@@ -77,6 +78,7 @@ exports.addPayment = async (req, res) => {
         const { amount, note } = req.body;
         const loan = await Loan.findById(req.params.id);
         const paymentAmount = parseFloat(amount);
+        const previousPaid = loan.amountPaid;
 
         loan.amountPaid += paymentAmount;
         if (loan.amountPaid >= loan.totalAmount) loan.status = 'Cleared';
@@ -84,7 +86,9 @@ exports.addPayment = async (req, res) => {
         loan.payments.push({ amount: paymentAmount, note, date: new Date() });
         await loan.save();
 
-        await logAction(req.user._id, 'UPDATE', 'LOANS', loan._id, `Paid ${paymentAmount} RWF to ${loan.lenderName}`);
+        const remaining = loan.totalAmount - loan.amountPaid;
+        await logAction(req.user._id, 'UPDATE', 'LOANS', loan._id,
+            `Loan payment to "${loan.lenderName}": ${paymentAmount.toLocaleString()} RWF. Paid so far: ${previousPaid.toLocaleString()} → ${loan.amountPaid.toLocaleString()} RWF. Remaining: ${remaining.toLocaleString()} RWF. Status: ${loan.status}`);
         res.redirect('/loans');
     } catch (err) {
 
@@ -97,7 +101,19 @@ exports.addPayment = async (req, res) => {
 
 exports.deleteLoan = async (req, res) => {
     try {
+        const loan = await Loan.findById(req.params.id);
+        if (!loan) return res.redirect('/loans');
+
         await Loan.findByIdAndDelete(req.params.id);
+
+        await logAction(
+            req.user._id,
+            'DELETE',
+            'LOANS',
+            req.params.id,
+            `Deleted loan from ${loan.lenderName} (Total: ${loan.totalAmount.toLocaleString()} RWF, Status: ${loan.status})`
+        );
+
         res.redirect('/loans');
     } catch (err) {
         res.status(500).render("500", {
@@ -110,6 +126,10 @@ exports.deleteLoan = async (req, res) => {
 exports.updateLoan = async (req, res) => {
     try {
         const { lenderName, totalAmount, description, dateBorrowed, status } = req.body;
+
+        // Fetch old values for audit trail
+        const oldLoan = await Loan.findById(req.params.id);
+
         const loan = await Loan.findByIdAndUpdate(req.params.id, {
             lenderName,
             totalAmount: parseFloat(totalAmount),
@@ -118,7 +138,14 @@ exports.updateLoan = async (req, res) => {
             status
         }, { new: true });
 
-        await logAction(req.user._id, 'UPDATE', 'LOANS', loan._id, `Updated details for loan from ${lenderName}`);
+        const changes = [];
+        if (oldLoan.lenderName !== lenderName) changes.push(`Lender: "${oldLoan.lenderName}" → "${lenderName}"`);
+        if (oldLoan.totalAmount !== parseFloat(totalAmount)) changes.push(`Amount: ${oldLoan.totalAmount.toLocaleString()} → ${parseFloat(totalAmount).toLocaleString()} RWF`);
+        if (oldLoan.status !== status) changes.push(`Status: "${oldLoan.status}" → "${status}"`);
+        if (oldLoan.description !== description) changes.push(`Description updated`);
+
+        await logAction(req.user._id, 'UPDATE', 'LOANS', loan._id,
+            `Updated loan from "${lenderName}". Changes: ${changes.length > 0 ? changes.join(', ') : 'No key field changes'}`);
         res.redirect('/loans');
     } catch (err) {
         console.error("Update Error:", err);
@@ -179,6 +206,15 @@ exports.exportLoansPDF = async (req, res) => {
         });
 
         const pdfOutput = doc.output("arraybuffer");
+
+        await logAction(
+            req.user._id,
+            'EXPORT',
+            'LOANS',
+            'PDF_FILE',
+            `Exported Loan Summary PDF report covering ${loans.length} loans (Total Borrowed: ${grandTotal.toLocaleString()} RWF)`
+        );
+
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Loan_Summary.pdf`);
         res.send(Buffer.from(pdfOutput));

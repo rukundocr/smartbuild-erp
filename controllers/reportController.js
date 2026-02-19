@@ -1,6 +1,7 @@
 const RRASale = require('../models/RRASale');
 const RRAPurchase = require('../models/Purchase');
 const CasualPayment = require('../models/CasualPayment');
+const { logAction } = require('../utils/logger');
 
 exports.getVATSummary = async (req, res) => {
     try {
@@ -39,6 +40,15 @@ exports.getVATSummary = async (req, res) => {
         // Even if you have a VAT credit, you MUST pay the WHT collected from workers.
         const totalTaxLiability = vatPayable + totalWHT;
 
+        // Tax report generation log (compliance audit trail)
+        await logAction(
+            req.user._id,
+            'EXPORT',
+            'REPORTS',
+            'VAT_SUMMARY',
+            `Generated VAT/Tax Summary Report. Output: ${totalOutput.toLocaleString()} RWF, Input: ${totalInput.toLocaleString()} RWF, Net Payable: ${vatPayable.toLocaleString()} RWF`
+        );
+
         res.render('reports/vat-summary', {
             totalOutput,
             totalInput,
@@ -53,7 +63,7 @@ exports.getVATSummary = async (req, res) => {
         console.error(err);
         res.status(500).render("500", {
             layout: false,
-            message: 'Error occurred while loading Tax Summary.' 
+            message: 'Error occurred while loading Tax Summary.'
         });
     }
 };

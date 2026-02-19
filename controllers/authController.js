@@ -6,16 +6,16 @@ const QRCode = require('qrcode');
 const { logAction } = require('../utils/logger'); // Import the logger
 
 exports.getLogin = (req, res) => {
-    res.render('login', { 
-        layout: 'auth', 
-        title: 'Login | SmartBuild' 
+    res.render('login', {
+        layout: 'auth',
+        title: 'Login | SmartBuild'
     });
 };
 
 exports.getRegister = (req, res) => {
-    res.render('register', { 
-        layout: 'auth', 
-        title: 'Register | SmartBuild' 
+    res.render('register', {
+        layout: 'auth',
+        title: 'Register | SmartBuild'
     });
 };
 
@@ -38,7 +38,7 @@ exports.postRegister = async (req, res) => {
 exports.postLogin = (req, res, next) => {
     passport.authenticate('local', async (err, user, info) => {
         if (err) return next(err);
-        
+
         // If login fails (user not found or password incorrect)
         if (!user) {
             // 'info' contains the message from your Passport Strategy
@@ -48,7 +48,7 @@ exports.postLogin = (req, res, next) => {
 
         // Check if 2FA is enabled for this user
         if (user.isTwoFactorEnabled) {
-            req.session.tempUserId = user._id; 
+            req.session.tempUserId = user._id;
             return res.redirect('/auth/login-2fa');
         }
 
@@ -72,7 +72,7 @@ exports.logout = (req, res, next) => {
 
     req.logout(async (err) => {
         if (err) return next(err);
-        
+
         // LOGGING: Logout
         if (userId) {
             await logAction(userId, 'LOGOUT', 'AUTH', userId, `User logged out: ${userName}`);
@@ -93,7 +93,7 @@ exports.updatePassword = async (req, res) => {
 
         const user = await User.findById(req.user._id);
         const isMatch = await bcrypt.compare(currentPassword, user.password);
-        
+
         if (!isMatch) {
             req.flash('error_msg', 'Current password is incorrect');
             return res.redirect('/auth/change-password');
@@ -108,7 +108,7 @@ exports.updatePassword = async (req, res) => {
         // Log the user out since the password has changed (Security Best Practice)
         req.logout((err) => {
             if (err) return next(err);
-            
+
             // Render the page with the success state
             res.render('change-password', {
                 title: 'Password Updated | SmartBuild',
@@ -124,7 +124,7 @@ exports.updatePassword = async (req, res) => {
 };
 
 exports.getChangePassword = (req, res) => {
-    res.render('change-password', { 
+    res.render('change-password', {
         title: 'Change Password | SmartBuild',
         user: req.user // Pass user to the layout
     });
@@ -135,7 +135,7 @@ exports.setup2FA = async (req, res) => {
     try {
         const secret = authenticator.generateSecret();
         const otpauth = authenticator.keyuri(req.user.email, 'SmartBuild-ERP', secret);
-        
+
         // Save temporary secret to user (not enabled yet)
         await User.findByIdAndUpdate(req.user._id, { twoFactorSecret: secret });
 
@@ -156,6 +156,7 @@ exports.verify2FA = async (req, res) => {
     if (isValid) {
         user.isTwoFactorEnabled = true;
         await user.save();
+        await logAction(user._id, 'UPDATE', 'AUTH', user._id, `Enabled Two-Factor Authentication (via setup flow)`);
         req.flash('success_msg', '2FA enabled successfully!');
         res.redirect('/');
     } else {
@@ -172,7 +173,7 @@ exports.postVerifyLogin2FA = async (req, res, next) => {
         if (!userId) return res.redirect('/auth/login');
 
         const user = await User.findById(userId);
-        
+
         // Verify the 6-digit token against the stored secret
         const isValid = authenticator.check(token, user.twoFactorSecret);
 
@@ -186,7 +187,7 @@ exports.postVerifyLogin2FA = async (req, res, next) => {
 
                 // LOGGING: Successful Login (via 2FA)
                 await logAction(user._id, 'LOGIN', 'AUTH', user._id, `User logged in via 2FA: ${user.name}`);
-                
+
                 return res.redirect('/');
             });
         } else {
@@ -204,10 +205,10 @@ exports.postVerifyLogin2FA = async (req, res, next) => {
 exports.getSettings = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
-        res.render('settings', { 
-            title: 'Security Settings', 
+        res.render('settings', {
+            title: 'Security Settings',
             user,
-            is2FAEnabled: user.isTwoFactorEnabled 
+            is2FAEnabled: user.isTwoFactorEnabled
         });
     } catch (err) {
         res.redirect('/');
@@ -218,7 +219,7 @@ exports.getSettings = async (req, res) => {
 exports.initiate2FA = async (req, res) => {
     const secret = authenticator.generateSecret();
     const otpauth = authenticator.keyuri(req.user.email, 'SmartBuild-ERP', secret);
-    
+
     // Save temporary secret (don't enable yet)
     await User.findByIdAndUpdate(req.user._id, { twoFactorSecret: secret });
 
@@ -245,9 +246,9 @@ exports.verifyAndEnable2FA = async (req, res) => {
 
 // 4. Turn OFF 2FA
 exports.disable2FA = async (req, res) => {
-    await User.findByIdAndUpdate(req.user._id, { 
-        isTwoFactorEnabled: false, 
-        twoFactorSecret: null 
+    await User.findByIdAndUpdate(req.user._id, {
+        isTwoFactorEnabled: false,
+        twoFactorSecret: null
     });
     await logAction(req.user._id, 'UPDATE', 'AUTH', req.user._id, "Disabled Two-Factor Authentication");
     req.flash('success_msg', 'Two-Factor Authentication has been disabled.');
