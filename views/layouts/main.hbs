@@ -1,27 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartBuild | ERP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --sidebar-width: 280px; --bg-dark: #000; --card-bg: #111; }
-        
-        body { 
-            background-color: var(--bg-dark); 
-            color: #fff; 
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        :root {
+            --sidebar-width: 280px;
+            --bg-dark: #000;
+            --card-bg: #111;
         }
-        
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         /* Sidebar Styling */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
             position: fixed;
-            left: 0; 
+            left: 0;
             top: 0;
             background-color: var(--card-bg);
             border-right: 1px solid #222;
@@ -41,21 +47,22 @@
             font-weight: 800;
         }
 
-        .nav-link { 
-            color: #888; 
-            padding: 10px 15px; 
-            border-radius: 8px; 
-            margin-bottom: 4px; 
-            transition: 0.2s; 
-            display: flex; 
-            align-items: center; 
+        .nav-link {
+            color: #888;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
             text-decoration: none;
             font-size: 0.9rem;
         }
-        
-        .nav-link:hover, .nav-link.active { 
-            background: #1a1a1a; 
-            color: #0d6efd; 
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #1a1a1a;
+            color: #0d6efd;
         }
 
         .nav-link.collapsed i.fa-chevron-down {
@@ -66,8 +73,11 @@
             font-size: 0.7rem;
             transition: transform 0.3s;
         }
-        
-        .nav-link i:first-child { width: 25px; font-size: 1rem; }
+
+        .nav-link i:first-child {
+            width: 25px;
+            font-size: 1rem;
+        }
 
         /* Dropdown Inner Links */
         .collapse-inner {
@@ -88,13 +98,19 @@
             padding-top: 20px;
             border-top: 1px solid #222;
         }
+
         .user-info-item {
             color: #fff;
             padding: 12px 15px;
             display: flex;
             align-items: center;
         }
-        .user-info-item i { width: 30px; font-size: 1.5rem; color: #0d6efd; }
+
+        .user-info-item i {
+            width: 30px;
+            font-size: 1.5rem;
+            color: #0d6efd;
+        }
 
         /* Main Content Styling */
         .main-content {
@@ -107,29 +123,82 @@
         }
 
         @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; width: 100%; padding: 20px; padding-top: 80px; }
-            .sidebar-overlay {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.7); z-index: 1040; display: none;
+            .sidebar {
+                transform: translateX(-100%);
             }
-            .sidebar-overlay.show { display: block; }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+                padding-top: 80px;
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 1040;
+                display: none;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
         }
 
         .mobile-header {
-            display: none; position: fixed; top: 0; left: 0; right: 0; height: 60px;
-            background: var(--card-bg); border-bottom: 1px solid #222; z-index: 1030;
-            align-items: center; padding: 0 20px;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--card-bg);
+            border-bottom: 1px solid #222;
+            z-index: 1030;
+            align-items: center;
+            padding: 0 20px;
         }
 
-        @media (max-width: 992px) { .mobile-header { display: flex; justify-content: space-between; } }
+        @media (max-width: 992px) {
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+            }
+        }
 
-        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
-        .card { background-color: var(--card-bg); border: 1px solid #222; border-radius: 12px; }
-        .form-control, .form-select { background-color: #000 !important; border: 1px solid #333 !important; color: #fff !important; padding: 12px; }
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #222;
+            border-radius: 12px;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #000 !important;
+            border: 1px solid #333 !important;
+            color: #fff !important;
+            padding: 12px;
+        }
     </style>
 </head>
+
 <body>
 
     {{#if user}}
@@ -138,7 +207,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <h5 class="fw-bold text-primary mb-0">SMARTBUILD</h5>
-        <div style="width: 40px;"></div> 
+        <div style="width: 40px;"></div>
     </header>
 
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -147,7 +216,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4 px-2">
             <div>
                 <h3 class="fw-bold text-primary mb-0">SMARTBUILD</h3>
-                <small class="text-secondary text-uppercase tracking-widest" style="font-size: 0.6rem;">Construction ERP</small>
+                <small class="text-secondary text-uppercase tracking-widest" style="font-size: 0.6rem;">Construction
+                    ERP</small>
             </div>
             <button class="btn d-lg-none text-secondary" onclick="toggleSidebar()">
                 <i class="fas fa-times"></i>
@@ -155,7 +225,7 @@
         </div>
 
         <nav class="nav flex-column mb-auto">
-            
+
             <div class="menu-label">Analytics</div>
             <a class="nav-link justify-content-between" data-bs-toggle="collapse" href="#menuBI" role="button">
                 <span><i class="fas fa-chart-line"></i> Business Intelligence</span>
@@ -168,7 +238,8 @@
             </div>
 
             <div class="menu-label">Operational</div>
-            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuOps" role="button">
+            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuOps"
+                role="button">
                 <span><i class="fas fa-hard-hat"></i> Operations</span>
                 <i class="fas fa-chevron-down"></i>
             </a>
@@ -177,7 +248,8 @@
                     <a class="nav-link" href="/projects"><i class="fas fa-tasks"></i> Projects</a>
                     <a class="nav-link" href="/expenses"><i class="fas fa-receipt"></i> Daily Expenses</a>
                     <a class="nav-link" href="/invoices"><i class="fas fa-file-invoice"></i> Proforma Invoices</a>
-                    <a class="nav-link" href="/casual-workers/payments"><i class="fas fa-file-invoice-dollar"></i> Casual worker payment</a>
+                    <a class="nav-link" href="/casual-workers/payments"><i class="fas fa-file-invoice-dollar"></i>
+                        Casual worker payment</a>
                     <a class="nav-link" href="/casual-workers"> <i class="fas fa-users-cog"></i> Casual Workers</a>
                 </div>
             </div>
@@ -185,7 +257,8 @@
 
 
             <div class="menu-label">Taxation</div>
-            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuTax" role="button">
+            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuTax"
+                role="button">
                 <span><i class="fas fa-university"></i> RRA Compliances</span>
                 <i class="fas fa-chevron-down"></i>
             </a>
@@ -193,12 +266,14 @@
                 <div class="collapse-inner">
                     <a class="nav-link" href="/purchases"><i class="fas fa-file-download"></i> Purchases</a>
                     <a class="nav-link" href="/rra-sales"><i class="fas fa-file-upload"></i> Sales</a>
-                    <a class="nav-link text-info" href="/reports/vat-summary"><i class="fas fa-chart-bar"></i> TAX Summary</a>
+                    <a class="nav-link text-info" href="/reports/vat-summary"><i class="fas fa-chart-bar"></i> TAX
+                        Summary</a>
                 </div>
             </div>
 
             <div class="menu-label">Management</div>
-            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuInternal" role="button">
+            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuInternal"
+                role="button">
                 <span><i class="fas fa-shield-alt"></i> Internal Control</span>
                 <i class="fas fa-chevron-down"></i>
             </a>
@@ -206,12 +281,12 @@
                 <div class="collapse-inner">
                     <a class="nav-link" href="/loans"><i class="fas fa-hand-holding-usd"></i> Loans</a>
                     <a class="nav-link" href="/audit"><i class="fas fa-history"></i> Audit Logs</a>
-                     <a class="nav-link" href="/auth/register"><i class="fas fa-user-plus"></i>Create Account</a>
-             <a class="nav-link" href="/auth/change-password"><i class="fas fa-key"></i> Change Password</a>
-             <a href="/auth/settings" class="nav-link text-white">
-    <i class="fas fa-shield-alt text-info me-2"></i> 
-    <span>Security Settings</span>
-</a>
+                    <a class="nav-link" href="/auth/register"><i class="fas fa-user-plus"></i>Create Account</a>
+                    <a class="nav-link" href="/auth/change-password"><i class="fas fa-key"></i> Change Password</a>
+                    <a href="/auth/settings" class="nav-link text-white">
+                        <i class="fas fa-shield-alt text-info me-2"></i>
+                        <span>Security Settings</span>
+                    </a>
                 </div>
             </div>
 
@@ -228,14 +303,15 @@
                 <i class="fas fa-user-circle"></i>
                 <div class="user-details ms-2">
                     <div class="small fw-bold">{{user.name}}</div>
-                    <div class="text-warning x-small uppercase tracking-wider" style="font-size: 0.65rem;">{{user.role}}</div>
+                    <div class="text-warning x-small uppercase tracking-wider" style="font-size: 0.65rem;">{{user.role}}
+                    </div>
 
                 </div>
             </div>
             <a class="nav-link text-danger mt-1" href="/auth/logout">
                 <i class="fas fa-power-off"></i> Logout
             </a>
-            
+
         </div>
     </aside>
     {{/if}}
@@ -244,22 +320,22 @@
         {{{body}}}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebarMenu');
             const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar) sidebar.classList.toggle('active');
-            if(overlay) overlay.classList.toggle('show');
+            if (sidebar) sidebar.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('show');
         }
-        
+
         // Auto-close sidebar on mobile when a sub-link is clicked
         document.querySelectorAll('.collapse-inner .nav-link').forEach(link => {
             link.addEventListener('click', () => {
-                if(window.innerWidth <= 992) toggleSidebar();
+                if (window.innerWidth <= 992) toggleSidebar();
             });
         });
     </script>
 </body>
+
 </html>

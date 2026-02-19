@@ -38,14 +38,22 @@ exports.getPurchases = async (req, res) => {
             .sort({ date: -1 })
             .lean();
 
+        // Read cancelled invoices from flash (set by importPurchases)
+        const flashData = req.flash('cancelled_invoices');
+        let cancelledInvoices = null;
+        if (flashData && flashData.length > 0) {
+            try { cancelledInvoices = JSON.parse(flashData[0]); } catch (e) { cancelledInvoices = null; }
+        }
+
         res.render('purchases', {
             purchases,
             totals,
-            totalImportedAllTime, // Added to pass the master count
-            filteredCount: purchases.length, // Added to pass current search count
+            totalImportedAllTime,
+            filteredCount: purchases.length,
             startDate,
             endDate,
-            supplierTIN
+            supplierTIN,
+            cancelledInvoices  // passed to view for popup
         });
 
     } catch (err) {
@@ -83,31 +91,77 @@ exports.importPurchases = async (req, res) => {
         })
         .on('end', async () => {
             try {
-                const docs = await Purchase.insertMany(results, { ordered: false });
+                // --- STEP 1: Detect missing records ---
+                const incomingReceiptNumbers = new Set(results.map(r => r.receiptNumber));
 
-                // AUDIT LOG: Successful Import
+                // Fetch all existing records from DB
+                const existingRecords = await Purchase.find({}, {
+                    receiptNumber: 1, supplierName: 1, supplierTIN: 1,
+                    natureOfGoods: 1, date: 1, amountWithoutVAT: 1, vat: 1, totalAmount: 1
+                }).lean();
+
+                // Records in DB but NOT in the new CSV = likely cancelled invoices
+                const missingRecords = existingRecords.filter(r => !incomingReceiptNumbers.has(r.receiptNumber));
+
+                // --- STEP 2: Delete each missing record and log with full details ---
+                const cancelledInvoices = [];
+                for (const missing of missingRecords) {
+                    await Purchase.findByIdAndDelete(missing._id);
+
+                    const dateStr = missing.date ? new Date(missing.date).toLocaleDateString('en-GB') : 'N/A';
+                    await logAction(
+                        req.user._id,
+                        'WARNING',
+                        'PURCHASES',
+                        missing._id,
+                        `CANCELLED INVOICE — Receipt #${missing.receiptNumber} | Supplier: "${missing.supplierName}" (TIN: ${missing.supplierTIN}) | Goods: ${missing.natureOfGoods || 'N/A'} | Date: ${dateStr} | Net: ${missing.amountWithoutVAT.toLocaleString()} RWF | VAT: ${missing.vat.toLocaleString()} RWF | Total: ${missing.totalAmount.toLocaleString()} RWF — Present in system but MISSING from new CSV. Auto-deleted.`
+                    );
+
+                    cancelledInvoices.push({
+                        receiptNumber: missing.receiptNumber,
+                        supplierName: missing.supplierName,
+                        supplierTIN: missing.supplierTIN,
+                        natureOfGoods: missing.natureOfGoods || 'N/A',
+                        date: dateStr,
+                        amountWithoutVAT: missing.amountWithoutVAT.toLocaleString(),
+                        vat: missing.vat.toLocaleString(),
+                        totalAmount: missing.totalAmount.toLocaleString()
+                    });
+                }
+
+                // --- STEP 3: Store cancelled list in flash for popup ---
+                if (cancelledInvoices.length > 0) {
+                    req.flash('cancelled_invoices', JSON.stringify(cancelledInvoices));
+                }
+
+                // --- STEP 4: Insert new records (duplicates skipped) ---
+                let insertedCount = 0;
+                try {
+                    const docs = await Purchase.insertMany(results, { ordered: false });
+                    insertedCount = docs.length;
+                } catch (insertErr) {
+                    insertedCount = insertErr.insertedDocs ? insertErr.insertedDocs.length : 0;
+                }
+
                 await logAction(
                     req.user._id,
                     'IMPORT',
                     'PURCHASES',
                     'BULK_FILE',
-                    `Successfully imported ${docs.length} RRA purchase records from CSV.`
+                    `Import complete: ${insertedCount} new record(s) added. ${missingRecords.length > 0 ? missingRecords.length + ' cancelled invoice(s) auto-deleted and logged as WARNING.' : 'No missing records detected.'}`
                 );
+
             } catch (err) {
-                // If some were inserted but others were duplicates, we still log what worked
-                const insertedCount = err.insertedDocs ? err.insertedDocs.length : 0;
-                await logAction(
-                    req.user._id,
-                    'IMPORT',
-                    'PURCHASES',
-                    'BULK_FILE',
-                    `Import completed. ${insertedCount} records added, duplicates were skipped.`
-                );
+                console.error('Import error:', err);
             }
+
             fs.unlinkSync(req.file.path);
-            res.redirect('/purchases');
+            req.session.save(() => {
+                res.redirect('/purchases');
+            });
         });
 };
+
 
 // 3. Export Purchases to CSV
 exports.exportPurchasesCSV = async (req, res) => {
