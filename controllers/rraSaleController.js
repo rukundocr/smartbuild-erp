@@ -98,6 +98,7 @@ exports.importCSVSales = async (req, res) => {
                             taxableSales: cleanNum(row['Taxble Sales']),
                             vatAmount: cleanNum(row['VAT'])
                         });
+
                         importedCount++;
                     }
                 } catch (e) {

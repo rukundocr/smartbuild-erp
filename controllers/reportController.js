@@ -37,10 +37,8 @@ exports.getVATSummary = async (req, res) => {
         const vatPayable = totalOutput - totalInput;
 
         // Total Remittance = (Net VAT) + (WHT)
-        // Even if you have a VAT credit, you MUST pay the WHT collected from workers.
         const totalTaxLiability = vatPayable + totalWHT;
 
-        // Tax report generation log (compliance audit trail)
         await logAction(
             req.user._id,
             'EXPORT',
@@ -65,5 +63,21 @@ exports.getVATSummary = async (req, res) => {
             layout: false,
             message: 'Error occurred while loading Tax Summary.'
         });
+    }
+};
+
+exports.getVatTrend = async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const trendData = await TaxTrend.find({
+            date: { $gte: thirtyDaysAgo }
+        }).sort({ date: 1 }).lean();
+
+        res.json(trendData);
+    } catch (err) {
+        console.error("Error fetching VAT trend:", err);
+        res.status(500).json({ error: "Failed to fetch trend data" });
     }
 };
