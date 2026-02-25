@@ -1,0 +1,158 @@
+<div class="card bg-dark border-secondary p-4 mb-4 shadow">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="text-secondary small mb-1">Select Project</label>
+            <select name="projectId" class="form-select bg-black text-white border-secondary" required
+                onchange="autoFillClient(this)">
+                <option value="" disabled {{#unless invoice}}selected{{/unless}}>Choose Project...</option>
+                {{#each projects}}
+                <option value="{{this._id}}" data-client="{{this.clientName}}" {{#if (eq (toString ../invoice.projectId)
+                    (toString this._id))}}selected{{/if}}>
+                    {{this.projectName}}
+                </option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="text-secondary small mb-1">Client Name</label>
+            <input type="text" name="clientName" id="clientInput"
+                class="form-control bg-black text-white border-secondary" value="{{invoice.clientName}}" required
+                placeholder="Enter Client Name">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="text-secondary small mb-1">Site Location</label>
+            <input type="text" name="siteLocation" class="form-control bg-black text-white border-secondary"
+                value="{{invoice.siteLocation}}" required placeholder="e.g. Kigali, Nyarugenge">
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary shadow mb-4">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead>
+                <tr class="text-secondary small">
+                    <th width="5%">#</th>
+                    <th width="25%">ITEM NAME</th>
+                    <th width="20%">SPECS</th>
+                    <th width="10%">UNIT</th>
+                    <th width="10%">QTY</th>
+                    <th width="15%">PRICE</th>
+                    <th width="15%">TOTAL</th>
+                    <th width="5%"></th>
+                </tr>
+            </thead>
+            <tbody id="invoiceItemsBody">
+                {{#if invoice.items}}
+                {{#each invoice.items}}
+                <tr>
+                    <td class="pt-3">{{add @index 1}}</td>
+                    <td><input type="text" name="items[{{@index}}][itemName]" class="form-control form-control-sm"
+                            value="{{this.itemName}}" required></td>
+                    <td><input type="text" name="items[{{@index}}][specs]" class="form-control form-control-sm"
+                            value="{{this.specs}}"></td>
+                    <td><input type="text" name="items[{{@index}}][unit]" class="form-control form-control-sm"
+                            value="{{this.unit}}"></td>
+                    <td><input type="number" name="items[{{@index}}][qty]"
+                            class="form-control form-control-sm qty-input" value="{{this.qty}}" required></td>
+                    <td><input type="number" name="items[{{@index}}][unitPrice]"
+                            class="form-control form-control-sm price-input" value="{{this.unitPrice}}" required></td>
+                    <td class="line-total fw-bold text-info pt-3">{{#if this.totalPrice}}{{formatCurrency
+                        this.totalPrice}}{{else}}0 RWF{{/if}}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0"
+                            onclick="this.closest('tr').remove(); calculateTotals();">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                </tr>
+                {{/each}}
+                {{else}}
+                <tr>
+                    <td class="pt-3">1</td>
+                    <td><input type="text" name="items[0][itemName]" class="form-control form-control-sm" required></td>
+                    <td><input type="text" name="items[0][specs]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="items[0][unit]" class="form-control form-control-sm"></td>
+                    <td><input type="number" name="items[0][qty]" class="form-control form-control-sm qty-input"
+                            required></td>
+                    <td><input type="number" name="items[0][unitPrice]" class="form-control form-control-sm price-input"
+                            required></td>
+                    <td class="line-total fw-bold text-info pt-3">0 RWF</td>
+                    <td></td>
+                </tr>
+                {{/if}}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer border-secondary d-flex justify-content-between bg-black bg-opacity-50">
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">+ Add Row</button>
+        <div class="text-end text-white">
+            <p class="mb-1 small text-secondary">Subtotal: <span id="displaySubtotal">{{#if invoice}}{{formatCurrency
+                    invoice.subtotal}}{{else}}0{{/if}}</span> RWF</p>
+            <p class="mb-1 small text-warning">VAT (18%): <span id="displayVAT">{{#if invoice}}{{formatCurrency
+                    invoice.vatAmount}}{{else}}0{{/if}}</span> RWF</p>
+            <h4 class="fw-bold mb-0">Total: <span id="displayTotal" class="text-success">{{#if invoice}}{{formatCurrency
+                    invoice.grandTotal}}{{else}}0{{/if}}</span> RWF</h4>
+        </div>
+    </div>
+</div>
+
+<script>
+    let itemCount = {{ #if invoice.items }}{ { invoice.items.length } } { {else } } 1{ {/if } };
+
+    function autoFillClient(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const clientName = selectedOption.getAttribute('data-client');
+        if (clientName) {
+            document.getElementById('clientInput').value = clientName;
+        }
+    }
+
+    function addRow() {
+        const tbody = document.getElementById('invoiceItemsBody');
+        const row = `<tr>
+            <td class="pt-3">${itemCount + 1}</td>
+            <td><input type="text" name="items[${itemCount}][itemName]" class="form-control form-control-sm" required></td>
+            <td><input type="text" name="items[${itemCount}][specs]" class="form-control form-control-sm"></td>
+            <td><input type="text" name="items[${itemCount}][unit]" class="form-control form-control-sm"></td>
+            <td><input type="number" name="items[${itemCount}][qty]" class="form-control form-control-sm qty-input" required></td>
+            <td><input type="number" name="items[${itemCount}][unitPrice]" class="form-control form-control-sm price-input" required></td>
+            <td class="line-total fw-bold text-info pt-3">0 RWF</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); calculateTotals();">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+        itemCount++;
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
+            calculateTotals();
+        }
+    });
+
+    function calculateTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('#invoiceItemsBody tr').forEach(row => {
+            const qtyInput = row.querySelector('.qty-input');
+            const priceInput = row.querySelector('.price-input');
+            if (qtyInput && priceInput) {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = qty * price;
+                subtotal += total;
+                const lineTotal = row.querySelector('.line-total');
+                if (lineTotal) {
+                    lineTotal.innerText = total.toLocaleString() + ' RWF';
+                }
+            }
+        });
+        const vat = subtotal * 0.18;
+        document.getElementById('displaySubtotal').innerText = subtotal.toLocaleString();
+        document.getElementById('displayVAT').innerText = vat.toLocaleString();
+        document.getElementById('displayTotal').innerText = (subtotal + vat).toLocaleString();
+    }
+</script>

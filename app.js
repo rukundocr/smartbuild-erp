@@ -148,6 +148,9 @@ app.engine('hbs', engine({
             const num = typeof n === 'number' ? n : parseFloat(n);
             if (isNaN(num)) return '0';
             return new Intl.NumberFormat('en-US').format(num);
+        },
+        add: function (a, b) {
+            return parseFloat(a) + parseFloat(b);
         }
     }
 }));
