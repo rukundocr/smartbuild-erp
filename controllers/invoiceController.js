@@ -106,7 +106,8 @@ exports.updateInvoice = async (req, res) => {
             items: processedItems,
             subtotal,
             vatAmount: vat,
-            grandTotal: grandTotal
+            grandTotal: grandTotal,
+            date: new Date() // Refresh date on edit
         }, { new: true });
 
         const changes = [];

@@ -10,7 +10,7 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
     doc.text("SMARTBUILD LTD", 14, 20);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
@@ -20,16 +20,21 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
     doc.setFontSize(11);
     doc.setTextColor(0);
     doc.text(`INVOICE NO: ${invoice.invoiceNumber}`, 140, 20);
-    doc.text(`DATE: ${new Date(invoice.date).toLocaleDateString('en-GB')}`, 140, 27);
+    doc.text(`DATE: ${now.toLocaleDateString('en-GB')}`, 140, 27);
 
-    doc.line(14, 35, 196, 35); 
-    
+    doc.line(14, 35, 196, 35);
+
+    // Document Title
+    doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("BILL TO:", 14, 45);
-    doc.setFontSize(12);
-    doc.text(invoice.clientName.toUpperCase(), 14, 52);
+    doc.text("PROFROMAT INVOICE", 105, 43, { align: "center" });
 
-    let currentY = 58;
+    doc.setFontSize(11);
+    doc.text("BILL TO:", 14, 52);
+    doc.setFontSize(12);
+    doc.text(invoice.clientName.toUpperCase(), 14, 59);
+
+    let currentY = 65;
     if (invoice.projectId && invoice.projectId.projectName) {
         doc.setFont("helvetica", "bold");
         doc.text(`Project: ${invoice.projectId.projectName}`, 14, currentY);
@@ -46,7 +51,7 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
         item.specs || '-',
         item.unit || '-',
         item.qty,
-        item.unitPrice.toLocaleString() ,
+        item.unitPrice.toLocaleString(),
         item.totalPrice.toLocaleString(),
     ]);
 
@@ -75,18 +80,18 @@ const generateInvoicePDF = async (invoice) => { // Changed to async
     doc.text("Kabeho Theoneste", 14, finalY + 7);
     doc.setFont("helvetica", "italic");
     doc.text("Managing Director", 14, finalY + 12);
-    doc.line(14, finalY + 25, 70, finalY + 25); 
+    doc.line(14, finalY + 25, 70, finalY + 25);
 
     // --- NEW: QR CODE & FOOTER DETAILS ---
-    
+
     // Create the Verification URL (Replace with your actual domain later)
     const verifyUrl = `https://smartbuildms.onrender.com/invoices/verify/invoice/${invoice._id}`;
-    
+
     try {
         const qrDataUrl = await QRCode.toDataURL(verifyUrl);
         // Add QR code image (x, y, width, height)
         doc.addImage(qrDataUrl, 'PNG', 165, finalY + 25, 30, 30);
-        
+
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(150);
