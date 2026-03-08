@@ -151,6 +151,9 @@ app.engine('hbs', engine({
         },
         add: function (a, b) {
             return parseFloat(a) + parseFloat(b);
+        },
+        multiply: function (a, b) {
+            return (parseFloat(a) || 0) * (parseFloat(b) || 0);
         }
     }
 }));
@@ -195,6 +198,9 @@ app.use('/rra-sales', require('./routes/rraSales'));
 app.use('/reports', reportRoutes);
 app.use('/loans', loanRoutes);
 app.use('/casual-workers', require('./routes/casualWorkers'));
+app.use('/internal/inventory', require('./routes/internalInventory'));
+app.use('/internal/clients', require('./routes/clientRoutes'));
+app.use('/internal/sales', require('./routes/internalSales'));
 
 
 // This middleware triggers only if none of the routes above match the URL

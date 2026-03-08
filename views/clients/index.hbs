@@ -1,0 +1,139 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Internal Clients</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClientModal">
+            <i class="fas fa-plus me-2"></i> Add Client
+        </button>
+    </div>
+
+    <div class="card p-4 text-white">
+        <div class="table-responsive">
+            <table id="clientsTable" class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Client Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Joined Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each clients}}
+                    <tr>
+                        <td class="fw-bold text-primary">{{this.clientName}}</td>
+                        <td>{{this.phone}}</td>
+                        <td>{{this.email}}</td>
+                        <td>{{this.address}}</td>
+                        <td>{{formatDate this.createdAt}}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info me-1"
+                                onclick="editClient('{{this._id}}', '{{this.clientName}}', '{{this.phone}}', '{{this.email}}', '{{this.address}}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="/internal/clients/delete/{{this._id}}" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Delete this client?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Client Modal -->
+<div class="modal fade" id="addClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <form action="/internal/clients/add" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Add New Client</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Client Name</label>
+                        <input type="text" name="clientName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <form id="editClientForm" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Edit Client Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Client Name</label>
+                        <input type="text" name="clientName" id="editClientName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" id="editClientPhone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="editClientEmail" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" id="editClientAddress" class="form-control" rows="2"
+                            required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white">Update Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editClient(id, name, phone, email, address) {
+        document.getElementById('editClientForm').action = `/internal/clients/update/${id}`;
+        document.getElementById('editClientName').value = name;
+        document.getElementById('editClientPhone').value = phone;
+        document.getElementById('editClientEmail').value = email;
+        document.getElementById('editClientAddress').value = address;
+
+        new bootstrap.Modal(document.getElementById('editClientModal')).show();
+    }
+
+    $(document).ready(function () {
+        $('#clientsTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: ['csv', 'print'],
+            pageLength: 10
+        });
+    });
+</script>

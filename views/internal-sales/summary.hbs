@@ -1,0 +1,172 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Internal Sales Summary</h2>
+        <div class="d-flex gap-2">
+            <a href="/internal/sales/download-summary?startDate={{startDate}}&endDate={{endDate}}&status={{status}}"
+                class="btn btn-outline-info">
+                <i class="fas fa-file-pdf me-2"></i> Download PDF Summary
+            </a>
+            <a href="/internal/sales/create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> New Invoice
+            </a>
+        </div>
+    </div>
+
+    <!-- Enhanced Filter -->
+    <div class="card p-3 mb-4 border-secondary shadow-sm">
+        <form action="/internal/sales/summary" method="GET">
+            <div class="row align-items-end gx-2">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label small text-secondary">Start Date</label>
+                    <input type="date" name="startDate" class="form-control bg-dark text-white border-secondary"
+                        value="{{startDate}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label small text-secondary">End Date</label>
+                    <input type="date" name="endDate" class="form-control bg-dark text-white border-secondary"
+                        value="{{endDate}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label small text-secondary">Status</label>
+                    <select name="status" class="form-select bg-dark text-white border-secondary">
+                        <option value="">All Statuses</option>
+                        <option value="Paid" {{#if (eq status 'Paid' )}}selected{{/if}}>Paid</option>
+                        <option value="Pending" {{#if (eq status 'Pending' )}}selected{{/if}}>Pending</option>
+                        <option value="Cancelled" {{#if (eq status 'Cancelled' )}}selected{{/if}}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        <a href="/internal/sales/summary" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card p-4 text-center border-0 bg-primary-subtle shadow-sm">
+                <small class="text-uppercase text-secondary fw-bold">Total Revenue (Excl. Cancelled)</small>
+                <h3 class="fw-bold text-primary mt-1">{{formatCurrency totalRevenue}}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 text-center border-0 bg-info-subtle shadow-sm">
+                <small class="text-uppercase text-secondary fw-bold">Total Cost</small>
+                <h3 class="fw-bold text-info mt-1">{{formatCurrency totalCost}}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div
+                class="card p-4 text-center border-0 {{#if (gt netProfit 0)}}bg-success-subtle{{else}}bg-danger-subtle{{/if}} shadow-sm">
+                <small class="text-uppercase text-secondary fw-bold">Net Profit</small>
+                <h3 class="fw-bold {{#if (gt netProfit 0)}}text-success{{else}}text-danger{{/if}} mt-1">{{formatCurrency
+                    netProfit}}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4">
+        <div class="table-responsive">
+            <table id="salesSummaryTable" class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice No</th>
+                        <th>Client</th>
+                        <th>Total Items</th>
+                        <th>Grand Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each invoices}}
+                    <tr>
+                        <td>{{formatDate this.date}}</td>
+                        <td class="fw-bold"><code>{{this.invoiceNo}}</code></td>
+                        <td>{{this.clientId.clientName}}</td>
+                        <td>{{this.items.length}}</td>
+                        <td class="text-info fw-bold">{{formatCurrency this.grandTotal}}</td>
+                        <td>
+                            <span
+                                class="badge {{#if (eq this.status 'Paid')}}bg-success{{else if (eq this.status 'Pending')}}bg-warning text-dark{{else}}bg-danger{{/if}}">
+                                {{this.status}}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="/internal/sales/receipt/{{this._id}}" target="_blank"
+                                    class="btn btn-sm btn-outline-light" title="Print Receipt">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                                <a href="/internal/sales/download-pdf/{{this._id}}" class="btn btn-sm btn-outline-info"
+                                    title="Download PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                        Status
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        <li>
+                                            <form action="/internal/sales/update-status/{{this._id}}" method="POST">
+                                                <input type="hidden" name="status" value="Paid">
+                                                <button type="submit" class="dropdown-item">Mark as Paid</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form action="/internal/sales/update-status/{{this._id}}" method="POST">
+                                                <input type="hidden" name="status" value="Pending">
+                                                <button type="submit" class="dropdown-item">Mark as Pending</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form action="/internal/sales/update-status/{{this._id}}" method="POST"
+                                                onsubmit="return confirm('Cancel this invoice? Stock will be restored.')">
+                                                <input type="hidden" name="status" value="Cancelled">
+                                                <button type="submit" class="dropdown-item text-danger">Cancel
+                                                    Invoice</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <a href="/internal/sales/edit/{{this._id}}" class="btn btn-sm btn-outline-warning"
+                                    title="Edit Invoice">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="/internal/sales/delete/{{this._id}}" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete this invoice permanently?')" title="Delete Invoice">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#salesSummaryTable').DataTable({
+            dom: 'Blfrtip',
+            buttons: ['csv', 'print'],
+            pageLength: 20,
+            lengthMenu: [[10, 20, 50, -1], [10, 20, 50, "All"]],
+            order: [[0, 'desc']]
+        });
+    });
+</script>

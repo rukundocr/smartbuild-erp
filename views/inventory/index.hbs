@@ -1,0 +1,265 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Internal Inventory</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="fas fa-plus me-2"></i> Add Item
+        </button>
+    </div>
+
+    <div class="card p-4">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary">Filter by Category</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="">All Categories</option>
+                    <option value="Electricity">Electricity</option>
+                    <option value="Water">Water</option>
+                    <option value="Construction">Construction</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="inventoryTable" class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Item Name</th>
+                        <th>Category</th>
+                        <th>Sub-Category</th>
+                        <th>Stock</th>
+                        <th>Buying Price</th>
+                        <th>Selling Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each items}}
+                    <tr>
+                        <td><code>{{this.sku}}</code></td>
+                        <td>{{this.itemName}}</td>
+                        <td>{{this.category}}</td>
+                        <td>{{this.subCategory}}</td>
+                        <td>
+                            <span
+                                class="badge {{#if (gt this.minStockLevel this.quantity)}}bg-danger{{else}}bg-success{{/if}}">
+                                {{this.quantity}}
+                            </span>
+                        </td>
+                        <td>{{formatCurrency this.buyingPrice}}</td>
+                        <td>{{formatCurrency this.defaultSellingPrice}}</td>
+                        <td>
+                            {{#if (gt this.minStockLevel this.quantity)}}
+                            <span class="text-danger small"><i class="fas fa-exclamation-triangle"></i> Low Stock</span>
+                            {{else}}
+                            <span class="text-success small"><i class="fas fa-check-circle"></i> Healthy</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info me-1"
+                                onclick="editItem('{{this._id}}', '{{this.itemName}}', '{{this.sku}}', '{{this.category}}', '{{this.subCategory}}', '{{this.quantity}}', '{{this.buyingPrice}}', '{{this.defaultSellingPrice}}', '{{this.minStockLevel}}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="/internal/inventory/delete/{{this._id}}" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Delete this item?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <form action="/internal/inventory/add" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Add Inventory Item</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" name="itemName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SKU</label>
+                        <input type="text" name="sku" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category" id="modalCategory" class="form-select" required
+                                onchange="updateSubCategories(this.value, 'modalSubCategory')">
+                                <option value="">Select Category</option>
+                                <option value="Electricity">Electricity</option>
+                                <option value="Water">Water</option>
+                                <option value="Construction">Construction</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sub-Category</label>
+                            <select name="subCategory" id="modalSubCategory" class="form-select" required>
+                                <option value="">Select Category First</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Initial Qty</label>
+                            <input type="number" name="quantity" class="form-control" value="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Min Stock</label>
+                            <input type="number" name="minStockLevel" class="form-control" value="5" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Buying Price (RWF)</label>
+                            <input type="number" name="buyingPrice" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Selling Price (RWF)</label>
+                            <input type="number" name="defaultSellingPrice" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <form id="editForm" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Edit Inventory Item</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" name="itemName" id="editName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SKU</label>
+                        <input type="text" name="sku" id="editSku" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category" id="editCategory" class="form-select" required
+                                onchange="updateSubCategories(this.value, 'editSubCategory')">
+                                <option value="Electricity">Electricity</option>
+                                <option value="Water">Water</option>
+                                <option value="Construction">Construction</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sub-Category</label>
+                            <select name="subCategory" id="editSubCategory" class="form-select" required></select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" name="quantity" id="editQty" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Min Stock</label>
+                            <input type="number" name="minStockLevel" id="editMin" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Buying Price</label>
+                            <input type="number" name="buyingPrice" id="editBuy" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Selling Price</label>
+                            <input type="number" name="defaultSellingPrice" id="editSell" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white">Update Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const subCategories = {
+        Electricity: ['Conductors', 'Protection', 'Distribution/Control', 'Terminals/Access'],
+        Water: ['Pipes', 'Fittings', 'Control/Flow', 'Infrastructure/Storage'],
+        Construction: ['Structural', 'Envelope/Exterior', 'Finishes/Interiors', 'Site Tools']
+    };
+
+    function updateSubCategories(category, targetId, selectedValue = '') {
+        const select = document.getElementById(targetId);
+        select.innerHTML = '<option value="">Select Sub-Category</option>';
+        if (category && subCategories[category]) {
+            subCategories[category].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                if (sub === selectedValue) option.selected = true;
+                select.appendChild(option);
+            });
+
+            // Auto-prefill SKU if adding new item
+            if (targetId === 'modalSubCategory') {
+                fetch(`/internal/inventory/next-sku/${category}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.nextSku) {
+                            document.querySelector('#addItemModal input[name="sku"]').value = data.nextSku;
+                        }
+                    });
+            }
+        }
+    }
+
+    function editItem(id, name, sku, cat, sub, qty, buy, sell, min) {
+        document.getElementById('editForm').action = `/internal/inventory/update/${id}`;
+        document.getElementById('editName').value = name;
+        document.getElementById('editSku').value = sku;
+        document.getElementById('editCategory').value = cat;
+        updateSubCategories(cat, 'editSubCategory', sub);
+        document.getElementById('editQty').value = qty;
+        document.getElementById('editBuy').value = buy;
+        document.getElementById('editSell').value = sell;
+        document.getElementById('editMin').value = min;
+
+        new bootstrap.Modal(document.getElementById('editItemModal')).show();
+    }
+
+    $(document).ready(function () {
+        const table = $('#inventoryTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: ['csv', 'print'],
+            pageLength: 10,
+            order: [[1, 'asc']]
+        });
+
+        $('#categoryFilter').on('change', function () {
+            table.column(2).search(this.value).draw();
+        });
+    });
+</script>

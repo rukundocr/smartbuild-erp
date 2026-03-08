@@ -1,0 +1,172 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Create Internal Invoice</h2>
+        <a href="/internal/sales/summary" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-2"></i> View Recent Sales
+        </a>
+    </div>
+
+    <form id="invoiceForm" action="/internal/sales/create" method="POST">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Invoice Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Client</label>
+                            <select name="clientId" class="form-select" required>
+                                <option value="">Select Client</option>
+                                {{#each clients}}
+                                <option value="{{this._id}}">{{this.clientName}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Invoice Number</label>
+                            <input type="text" name="invoiceNo" class="form-control"
+                                value="INT-{{add invoiceCount 1001}}" required>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mt-4 mb-3 border-bottom border-secondary pb-2">Items</h5>
+                    <div id="itemsContainer">
+                        <div class="item-row row mb-3 align-items-end" id="row0">
+                            <div class="col-md-5">
+                                <label class="form-label small">Select Item</label>
+                                <select name="items[0][itemId]" class="form-select item-select" required
+                                    onchange="updateRowData(0, this.value)">
+                                    <option value="">Choose item...</option>
+                                    {{#each items}}
+                                    <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}"
+                                        data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}">
+                                        {{this.itemName}} (Stock: {{this.quantity}})
+                                    </option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Qty</label>
+                                <input type="number" name="items[0][qty]" class="form-control qty-input" value="1"
+                                    min="1" required onchange="calculateRow(0)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Price (RWF)</label>
+                                <input type="number" name="items[0][priceAtSale]" class="form-control price-input"
+                                    required onchange="calculateRow(0)">
+                                <input type="hidden" name="items[0][costAtSale]" class="cost-input">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-danger w-100" onclick="removeRow(0)"
+                                    disabled>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="addRow()">
+                        <i class="fas fa-plus me-1"></i> Add Another Item
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card p-4 sticky-top" style="top: 100px;">
+                    <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2">Summary</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Items Count:</span>
+                        <span id="itemsCount">1</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4 mt-2">
+                        <h4 class="fw-bold">Total:</h4>
+                        <h4 class="fw-bold text-primary" id="displayTotal">0 RWF</h4>
+                        <input type="hidden" name="grandTotal" id="grandTotal" value="0">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg shadow">
+                        <i class="fas fa-save me-2"></i> Generate Invoice
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    let rowCount = 1;
+
+    function addRow() {
+        const container = document.getElementById('itemsContainer');
+        const newRow = document.createElement('div');
+        newRow.className = 'item-row row mb-3 align-items-end';
+        newRow.id = `row${rowCount}`;
+        newRow.innerHTML = `
+        <div class="col-md-5">
+            <select name="items[${rowCount}][itemId]" class="form-select item-select" required onchange="updateRowData(${rowCount}, this.value)">
+                <option value="">Choose item...</option>
+                {{#each items}}
+                <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}" data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}">
+                    {{this.itemName}} (Stock: {{this.quantity}})
+                </option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="items[${rowCount}][qty]" class="form-control qty-input" value="1" min="1" required onchange="calculateRow(${rowCount})">
+        </div>
+        <div class="col-md-3">
+            <input type="number" name="items[${rowCount}][priceAtSale]" class="form-control price-input" required onchange="calculateRow(${rowCount})">
+            <input type="hidden" name="items[${rowCount}][costAtSale]" class="cost-input">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger w-100" onclick="removeRow(${rowCount})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+        container.appendChild(newRow);
+        rowCount++;
+        updateCounts();
+    }
+
+    function removeRow(id) {
+        document.getElementById(`row${id}`).remove();
+        updateCounts();
+    }
+
+    function updateRowData(id, val) {
+        const row = document.getElementById(`row${id}`);
+        const select = row.querySelector('.item-select');
+        const selectedOption = select.options[select.selectedIndex];
+
+        if (val) {
+            row.querySelector('.price-input').value = selectedOption.dataset.price || '';
+            row.querySelector('.cost-input').value = selectedOption.dataset.cost || '';
+            row.querySelector('.qty-input').max = selectedOption.dataset.stock || '';
+        } else {
+            row.querySelector('.price-input').value = '';
+            row.querySelector('.cost-input').value = '';
+            row.querySelector('.qty-input').removeAttribute('max');
+        }
+        calculateTotal();
+    }
+
+    function calculateRow(id) {
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            total += (qty * price);
+        });
+
+        document.getElementById('grandTotal').value = total;
+        document.getElementById('displayTotal').innerText = new Intl.NumberFormat('en-US').format(total) + ' RWF';
+    }
+
+    function updateCounts() {
+        document.getElementById('itemsCount').innerText = document.querySelectorAll('.item-row').length;
+        calculateTotal();
+    }
+</script>

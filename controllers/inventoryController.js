@@ -1,0 +1,85 @@
+const { Inventory, validateInventory } = require('../models/Inventory');
+const { logAction } = require('../utils/logger');
+
+exports.getInventory = async (req, res) => {
+    try {
+        const items = await Inventory.find().sort({ createdAt: -1 });
+        res.render('inventory/index', {
+            title: 'Internal Inventory | SmartBuild',
+            items
+        });
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error fetching inventory');
+        res.redirect('/');
+    }
+};
+
+exports.addInventory = async (req, res) => {
+    try {
+        const { error } = validateInventory(req.body);
+        if (error) {
+            req.flash('error_msg', error.details[0].message);
+            return res.redirect('/internal/inventory');
+        }
+
+        const newItem = new Inventory(req.body);
+        await newItem.save();
+
+        await logAction(req.user._id, 'CREATE', 'INTERNAL_INVENTORY', newItem._id, `Added item: ${newItem.itemName}`);
+
+        req.flash('success_msg', 'Item added to inventory');
+        res.redirect('/internal/inventory');
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error adding item');
+        res.redirect('/internal/inventory');
+    }
+};
+
+exports.updateInventory = async (req, res) => {
+    try {
+        const { error } = validateInventory(req.body);
+        if (error) {
+            req.flash('error_msg', error.details[0].message);
+            return res.redirect('/internal/inventory');
+        }
+
+        const item = await Inventory.findByIdAndUpdate(req.params.id, req.body);
+        await logAction(req.user._id, 'UPDATE', 'INTERNAL_INVENTORY', req.params.id, `Updated item: ${item.itemName}`);
+
+        req.flash('success_msg', 'Inventory item updated');
+        res.redirect('/internal/inventory');
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error updating item');
+        res.redirect('/internal/inventory');
+    }
+};
+
+exports.deleteInventory = async (req, res) => {
+    try {
+        const item = await Inventory.findById(req.params.id);
+        if (item) {
+            await logAction(req.user._id, 'DELETE', 'INTERNAL_INVENTORY', req.params.id, `Deleted item: ${item.itemName}`);
+            await Inventory.findByIdAndDelete(req.params.id);
+        }
+        req.flash('success_msg', 'Item removed from inventory');
+        res.redirect('/internal/inventory');
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error deleting item');
+        res.redirect('/internal/inventory');
+    }
+};
+
+exports.getNextSKU = async (req, res) => {
+    try {
+        const { category } = req.params;
+        const nextSku = await Inventory.generateSKU(category);
+        res.json({ nextSku });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error generating SKU' });
+    }
+};

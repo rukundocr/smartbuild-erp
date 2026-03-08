@@ -8,6 +8,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+
+    <!-- Core Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --sidebar-width: 280px;
@@ -248,6 +262,7 @@
                     <a class="nav-link" href="/projects"><i class="fas fa-tasks"></i> Projects</a>
                     <a class="nav-link" href="/expenses"><i class="fas fa-receipt"></i> Daily Expenses</a>
                     <a class="nav-link" href="/invoices"><i class="fas fa-file-invoice"></i> Proforma Invoices</a>
+                    <a class="nav-link" href="/loans"><i class="fas fa-hand-holding-usd"></i> Loans</a>
                     <a class="nav-link" href="/casual-workers/payments"><i class="fas fa-file-invoice-dollar"></i>
                         Casual worker payment</a>
                     <a class="nav-link" href="/casual-workers"> <i class="fas fa-users-cog"></i> Casual Workers</a>
@@ -271,7 +286,28 @@
                 </div>
             </div>
 
-            <div class="menu-label">Management</div>
+            <div class="menu-label">Internal Management</div>
+            <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuInternalSuite"
+                role="button">
+                <span><i class="fas fa-boxes"></i> Inventory & Sales</span>
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="collapse" id="menuInternalSuite">
+                <div class="collapse-inner">
+                    <a class="nav-link" href="/internal/inventory"><i class="fas fa-warehouse"></i> Inventory</a>
+                    <a class="nav-link" href="/internal/clients"><i class="fas fa-user-tie"></i> Clients</a>
+                    <a class="nav-link" href="/internal/sales/create"><i class="fas fa-plus-circle"></i> Create
+                        Invoice</a>
+                    <a class="nav-link" href="/internal/sales/summary"><i class="fas fa-file-invoice-dollar"></i> Sales
+                        Summary</a>
+                </div>
+            </div>
+
+
+
+
+
+            <div class="menu-label">System Management</div>
             <a class="nav-link justify-content-between collapsed" data-bs-toggle="collapse" href="#menuInternal"
                 role="button">
                 <span><i class="fas fa-shield-alt"></i> Internal Control</span>
@@ -279,7 +315,6 @@
             </a>
             <div class="collapse" id="menuInternal">
                 <div class="collapse-inner">
-                    <a class="nav-link" href="/loans"><i class="fas fa-hand-holding-usd"></i> Loans</a>
                     <a class="nav-link" href="/audit"><i class="fas fa-history"></i> Audit Logs</a>
                     <a class="nav-link" href="/auth/register"><i class="fas fa-user-plus"></i>Create Account</a>
                     <a class="nav-link" href="/auth/change-password"><i class="fas fa-key"></i> Change Password</a>
@@ -289,6 +324,8 @@
                     </a>
                 </div>
             </div>
+
+
 
         </nav>
 
@@ -320,7 +357,6 @@
         {{{body}}}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebarMenu');
