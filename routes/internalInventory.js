@@ -8,5 +8,6 @@ router.post('/add', ensureAuthenticated, inventoryController.addInventory);
 router.post('/update/:id', ensureAuthenticated, inventoryController.updateInventory);
 router.get('/delete/:id', ensureAuthenticated, ensureAdmin, inventoryController.deleteInventory);
 router.get('/next-sku/:category', ensureAuthenticated, inventoryController.getNextSKU);
+router.get('/download-pdf', ensureAuthenticated, inventoryController.downloadInventoryPDF);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const { Inventory, validateInventory } = require('../models/Inventory');
 const { logAction } = require('../utils/logger');
+const { generateInventoryPDF } = require('../utils/inventoryPdfGenerator');
 
 exports.getInventory = async (req, res) => {
     try {
@@ -88,5 +89,34 @@ exports.getNextSKU = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error generating SKU' });
+    }
+};
+
+exports.downloadInventoryPDF = async (req, res) => {
+    try {
+        const { category } = req.query;
+        let filter = {};
+        if (category && category !== 'All' && category !== '') {
+            filter.category = category;
+        }
+
+        const items = await Inventory.find(filter).sort({ itemName: 1 });
+
+        const pdfBuffer = await generateInventoryPDF(items, category || 'All');
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename=Inventory_Report_${category || 'All'}_${new Date().toISOString().split('T')[0]}.pdf`,
+            'Content-Length': pdfBuffer.byteLength
+        });
+
+        res.send(Buffer.from(pdfBuffer));
+
+        await logAction(req.user._id, 'DOWNLOAD', 'INTERNAL_INVENTORY', null, `Downloaded PDF report for category: ${category || 'All'}`);
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error generating PDF');
+        res.redirect('/internal/inventory');
     }
 };
