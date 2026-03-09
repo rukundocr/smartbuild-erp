@@ -37,7 +37,7 @@ const generateInternalPDF = async (invoice) => {
     // 4. Items Table
     const tableData = invoice.items.map((item, index) => [
         index + 1,
-        item.itemId.itemName,
+        item.itemId.specification ? `${item.itemId.itemName} - ${item.itemId.specification}` : item.itemId.itemName,
         item.qty,
         item.priceAtSale.toLocaleString(),
         (item.qty * item.priceAtSale).toLocaleString()

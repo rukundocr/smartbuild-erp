@@ -69,6 +69,7 @@ app.engine('hbs', engine({
 
     helpers: {
         gt: (a, b) => a > b,
+        lte: (a, b) => a <= b,
 
         // Used for matching IDs in project/user filters
         toString: (val) => val ? val.toString() : '',

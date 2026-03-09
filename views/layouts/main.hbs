@@ -11,6 +11,10 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
 
     <!-- Core Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
@@ -19,9 +23,11 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/buttons.html5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/buttons.print.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <style>
         :root {
             --sidebar-width: 280px;
@@ -210,6 +216,40 @@
             color: #fff !important;
             padding: 12px;
         }
+
+        /* Select2 Dark Mode Fixes */
+        .select2-container--bootstrap-5 .select2-selection {
+            background-color: #000 !important;
+            border: 1px solid #333 !important;
+            color: #fff !important;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: #fff !important;
+        }
+
+        .select2-dropdown {
+            background-color: #111 !important;
+            border: 1px solid #333 !important;
+            color: #fff !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-search__field {
+            background-color: #000 !important;
+            color: #fff !important;
+            border: 1px solid #333 !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 8px 12px;
+        }
     </style>
 </head>
 
@@ -354,6 +394,25 @@
     {{/if}}
 
     <main class="{{#if user}}main-content{{else}}auth-container{{/if}}">
+        <div class="container-fluid px-0">
+            {{#if success_msg}}
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert"
+                style="background: rgba(25, 135, 84, 0.2); color: #75b798; border-left: 4px solid #198754 !important;">
+                <i class="fas fa-check-circle me-2"></i> {{success_msg}}
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
+                    onclick="this.parentElement.remove()"></button>
+            </div>
+            {{/if}}
+
+            {{#if error_msg}}
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert"
+                style="background: rgba(220, 53, 69, 0.2); color: #ea868f; border-left: 4px solid #dc3545 !important;">
+                <i class="fas fa-exclamation-triangle me-2"></i> {{error_msg}}
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
+                    onclick="this.parentElement.remove()"></button>
+            </div>
+            {{/if}}
+        </div>
         {{{body}}}
     </main>
 

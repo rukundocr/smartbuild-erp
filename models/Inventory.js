@@ -43,6 +43,14 @@ const inventorySchema = new mongoose.Schema({
         type: Number,
         required: true,
         default: 5
+    },
+    specification: {
+        type: String,
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true
     }
 }, {
     timestamps: true
@@ -58,7 +66,9 @@ const validateInventory = (data) => {
         quantity: Joi.number().min(0).required(),
         buyingPrice: Joi.number().min(0).required(),
         defaultSellingPrice: Joi.number().min(0).required(),
-        minStockLevel: Joi.number().min(0).required()
+        minStockLevel: Joi.number().min(0).required(),
+        specification: Joi.string().allow('', null).trim(),
+        description: Joi.string().allow('', null).trim()
     });
     return schema.validate(data);
 };

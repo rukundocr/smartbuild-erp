@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const inventoryController = require('../controllers/inventoryController');
+const { ensureAuthenticated, ensureAdmin } = require('../middleware/auth');
 
-router.get('/', inventoryController.getInventory);
-router.post('/add', inventoryController.addInventory);
-router.post('/update/:id', inventoryController.updateInventory);
-router.get('/delete/:id', inventoryController.deleteInventory);
-router.get('/next-sku/:category', inventoryController.getNextSKU);
+router.get('/', ensureAuthenticated, inventoryController.getInventory);
+router.post('/add', ensureAuthenticated, inventoryController.addInventory);
+router.post('/update/:id', ensureAuthenticated, inventoryController.updateInventory);
+router.get('/delete/:id', ensureAuthenticated, ensureAdmin, inventoryController.deleteInventory);
+router.get('/next-sku/:category', ensureAuthenticated, inventoryController.getNextSKU);
 
 module.exports = router;

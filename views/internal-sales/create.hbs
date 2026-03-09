@@ -38,8 +38,11 @@
                                     <option value="">Choose item...</option>
                                     {{#each items}}
                                     <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}"
-                                        data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}">
-                                        {{this.itemName}} (Stock: {{this.quantity}})
+                                        data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}"
+                                        data-spec="{{this.specification}}" {{#if (lte this.quantity 0)}}disabled{{/if}}>
+                                        {{this.itemName}} {{#if this.specification}}- {{this.specification}}{{/if}}
+                                        (Stock: {{this.quantity}}){{#if (lte this.quantity 0)}} - OUT
+                                        OF STOCK{{/if}}
                                     </option>
                                     {{/each}}
                                 </select>
@@ -93,6 +96,19 @@
 <script>
     let rowCount = 1;
 
+    // Initialize Select2
+    function initSelect2(selector) {
+        $(selector).select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Choose item...',
+            width: '100%'
+        });
+    }
+
+    $(document).ready(function () {
+        initSelect2('.item-select');
+    });
+
     function addRow() {
         const container = document.getElementById('itemsContainer');
         const newRow = document.createElement('div');
@@ -103,8 +119,8 @@
             <select name="items[${rowCount}][itemId]" class="form-select item-select" required onchange="updateRowData(${rowCount}, this.value)">
                 <option value="">Choose item...</option>
                 {{#each items}}
-                <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}" data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}">
-                    {{this.itemName}} (Stock: {{this.quantity}})
+                <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}" data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}" data-spec="{{this.specification}}" {{#if (lte this.quantity 0)}}disabled{{/if}}>
+                    {{this.itemName}} {{#if this.specification}}- {{this.specification}}{{/if}} (Stock: {{this.quantity}}){{#if (lte this.quantity 0)}} - OUT OF STOCK{{/if}}
                 </option>
                 {{/each}}
             </select>
@@ -123,6 +139,10 @@
         </div>
     `;
         container.appendChild(newRow);
+
+        // Initialize Select2 for the new row
+        initSelect2(`#row${rowCount} .item-select`);
+
         rowCount++;
         updateCounts();
     }
@@ -137,10 +157,36 @@
         const select = row.querySelector('.item-select');
         const selectedOption = select.options[select.selectedIndex];
 
+        // CHECK IF ITEM IS ALREADY SELECTED IN ANOTHER ROW
+        const allSelects = document.querySelectorAll('.item-select');
+        let duplicate = false;
+        allSelects.forEach(s => {
+            if (s !== select && s.value === val && val !== "") {
+                duplicate = true;
+            }
+        });
+
+        if (duplicate) {
+            alert("This item is already added to the invoice. Please adjust the quantity in the existing row instead.");
+            select.value = "";
+            row.querySelector('.price-input').value = '';
+            row.querySelector('.cost-input').value = '';
+            row.querySelector('.qty-input').removeAttribute('max');
+            calculateTotal();
+            return;
+        }
+
         if (val) {
             row.querySelector('.price-input').value = selectedOption.dataset.price || '';
             row.querySelector('.cost-input').value = selectedOption.dataset.cost || '';
             row.querySelector('.qty-input').max = selectedOption.dataset.stock || '';
+
+            // If current quantity is higher than stock, reset it
+            const qtyInput = row.querySelector('.qty-input');
+            const stock = parseInt(selectedOption.dataset.stock) || 0;
+            if (parseInt(qtyInput.value) > stock) {
+                qtyInput.value = stock;
+            }
         } else {
             row.querySelector('.price-input').value = '';
             row.querySelector('.cost-input').value = '';
@@ -169,4 +215,48 @@
         document.getElementById('itemsCount').innerText = document.querySelectorAll('.item-row').length;
         calculateTotal();
     }
+
+    // FORM SUBMISSION GUARD
+    document.getElementById('invoiceForm').addEventListener('submit', function (e) {
+        const rows = document.querySelectorAll('.item-row');
+        const itemIds = new Set();
+        let valid = true;
+
+        rows.forEach(row => {
+            const select = row.querySelector('.item-select');
+            const qtyInput = row.querySelector('.qty-input');
+            const itemId = select.value;
+            const qty = parseInt(qtyInput.value) || 0;
+            const stock = parseInt(select.options[select.selectedIndex].dataset.stock) || 0;
+
+            if (!itemId) {
+                alert("Please select an item for all rows.");
+                valid = false;
+                return;
+            }
+
+            if (itemIds.has(itemId)) {
+                alert("Duplicate items found. Each item can only be added once.");
+                valid = false;
+                return;
+            }
+            itemIds.add(itemId);
+
+            if (qty > stock) {
+                alert(`Quantity for "${select.options[select.selectedIndex].text}" exceeds available stock (${stock}).`);
+                valid = false;
+                return;
+            }
+
+            if (qty <= 0) {
+                alert("Quantity must be greater than zero.");
+                valid = false;
+                return;
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
 </script>

@@ -45,13 +45,20 @@ exports.updateInventory = async (req, res) => {
             return res.redirect('/internal/inventory');
         }
 
-        const item = await Inventory.findByIdAndUpdate(req.params.id, req.body);
+        const item = await Inventory.findByIdAndUpdate(req.params.id, req.body, { new: true });
         await logAction(req.user._id, 'UPDATE', 'INTERNAL_INVENTORY', req.params.id, `Updated item: ${item.itemName}`);
+
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.json({ success: true, item });
+        }
 
         req.flash('success_msg', 'Inventory item updated');
         res.redirect('/internal/inventory');
     } catch (err) {
         console.error(err);
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.status(500).json({ success: false, message: 'Error updating item' });
+        }
         req.flash('error_msg', 'Error updating item');
         res.redirect('/internal/inventory');
     }

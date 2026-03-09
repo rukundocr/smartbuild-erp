@@ -1,4 +1,5 @@
 const { Client, validateClient } = require('../models/Client');
+const { InternalInvoice } = require('../models/InternalInvoice'); // Added to check for dependencies
 const { logAction } = require('../utils/logger');
 
 exports.getClients = async (req, res) => {
@@ -59,12 +60,24 @@ exports.updateClient = async (req, res) => {
 
 exports.deleteClient = async (req, res) => {
     try {
-        const client = await Client.findById(req.params.id);
-        if (client) {
-            await logAction(req.user._id, 'DELETE', 'INTERNAL_CLIENTS', req.params.id, `Deleted client: ${client.clientName}`);
-            await Client.findByIdAndDelete(req.params.id);
+        const clientId = req.params.id;
+        const client = await Client.findById(clientId);
+
+        if (!client) {
+            req.flash('error_msg', 'Client not found.');
+            return res.redirect('/internal/clients');
         }
-        req.flash('success_msg', 'Client removed');
+
+        // 1. Check for associated invoices before deletion
+        const invoiceCount = await InternalInvoice.countDocuments({ clientId: clientId });
+        if (invoiceCount > 0) {
+            req.flash('error_msg', `Cannot delete "${client.clientName}": There are ${invoiceCount} invoice(s) associated with this client. Delete the invoices first.`);
+            return res.redirect('/internal/clients');
+        }
+
+        await logAction(req.user._id, 'DELETE', 'INTERNAL_CLIENTS', clientId, `Deleted client: ${client.clientName}`);
+        await Client.findByIdAndDelete(clientId);
+        req.flash('success_msg', `Client "${client.clientName}" removed successfully from the system.`);
         res.redirect('/internal/clients');
     } catch (err) {
         console.error(err);

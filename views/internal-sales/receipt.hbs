@@ -90,7 +90,7 @@
 
         {{#each invoice.items}}
         <div class="mb-2">
-            <div>{{this.itemId.itemName}}</div>
+            <div>{{this.itemId.itemName}} {{#if this.itemId.specification}}- {{this.itemId.specification}}{{/if}}</div>
             <div class="item-row">
                 <span>{{this.qty}} x {{this.priceAtSale}}</span>
                 <span>{{formatCurrency (add 0 (multiply this.qty this.priceAtSale))}}</span>

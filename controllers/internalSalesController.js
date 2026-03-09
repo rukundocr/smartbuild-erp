@@ -7,7 +7,7 @@ const { logAction } = require('../utils/logger');
 
 exports.getCreateInvoice = async (req, res) => {
     try {
-        const items = await Inventory.find({ quantity: { $gt: 0 } });
+        const items = await Inventory.find().sort({ itemName: 1 });
         const clients = await Client.find().sort({ clientName: 1 });
         const invoiceCount = await InternalInvoice.countDocuments();
         res.render('internal-sales/create', {
@@ -31,6 +31,12 @@ exports.createInvoice = async (req, res) => {
         }
 
         const { items } = req.body;
+        const itemIds = items.map(i => i.itemId);
+        const hasDuplicates = new Set(itemIds).size !== itemIds.length;
+        if (hasDuplicates) {
+            req.flash('error_msg', 'Cannot have duplicate items on the same invoice.');
+            return res.redirect('/internal/sales/create');
+        }
 
         // Stock Guard
         for (const item of items) {
@@ -80,7 +86,7 @@ exports.getSalesSummary = async (req, res) => {
 
         if (status) query.status = status;
 
-        const invoices = await InternalInvoice.find(query).populate('clientId').sort({ date: -1 });
+        const invoices = await InternalInvoice.find(query).populate('clientId').populate('items.itemId').sort({ date: -1 });
 
         let totalRevenue = 0;
         let totalCost = 0;
@@ -183,6 +189,14 @@ exports.updateInvoice = async (req, res) => {
             return res.redirect(`/internal/sales/edit/${req.params.id}`);
         }
 
+        const { items } = req.body;
+        const itemIds = items.map(i => i.itemId);
+        const hasDuplicates = new Set(itemIds).size !== itemIds.length;
+        if (hasDuplicates) {
+            req.flash('error_msg', 'Cannot have duplicate items on the same invoice.');
+            return res.redirect(`/internal/sales/edit/${req.params.id}`);
+        }
+
         const oldInvoice = await InternalInvoice.findById(req.params.id);
         if (!oldInvoice) return res.redirect('/internal/sales/summary');
 
@@ -195,7 +209,6 @@ exports.updateInvoice = async (req, res) => {
 
         // If new status is not cancelled, check stock and decrement
         if (req.body.status !== 'Cancelled') {
-            const { items } = req.body;
             for (const item of items) {
                 const invItem = await Inventory.findById(item.itemId);
                 if (!invItem || invItem.quantity < item.qty) {
@@ -230,15 +243,23 @@ exports.deleteInvoice = async (req, res) => {
         const invoice = await InternalInvoice.findById(req.params.id);
         if (!invoice) return res.redirect('/internal/sales/summary');
 
-        if (invoice.status !== 'Cancelled') {
+        // Stock Return Logic on Deletion:
+        // Only Pending invoices return stock (they haven't been finalized but stock was reserved).
+        // Paid invoices keep stock deducted (user request).
+        // Cancelled invoices already returned stock during the status transition.
+        if (invoice.status === 'Pending') {
             for (const item of invoice.items) {
                 await Inventory.findByIdAndUpdate(item.itemId, { $inc: { quantity: item.qty } });
             }
+            req.flash('success_msg', 'Pending invoice deleted and stock returned to store.');
+        } else if (invoice.status === 'Paid') {
+            req.flash('success_msg', 'Paid invoice deleted. Stock remains deducted from store.');
+        } else {
+            req.flash('success_msg', 'Cancelled invoice record deleted.');
         }
 
-        await logAction(req.user._id, 'DELETE', 'INTERNAL_SALES', req.params.id, `Deleted invoice: ${invoice.invoiceNo}`);
+        await logAction(req.user._id, 'DELETE', 'INTERNAL_SALES', req.params.id, `Deleted ${invoice.status} invoice: ${invoice.invoiceNo}`);
         await InternalInvoice.findByIdAndDelete(req.params.id);
-        req.flash('success_msg', 'Invoice deleted and stock restored');
         res.redirect('/internal/sales/summary');
     } catch (err) {
         console.error(err);

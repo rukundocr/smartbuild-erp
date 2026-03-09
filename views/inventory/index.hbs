@@ -25,8 +25,9 @@
                     <tr>
                         <th>SKU</th>
                         <th>Item Name</th>
+                        <th>Spec</th>
                         <th>Category</th>
-                        <th>Sub-Category</th>
+                        <th>Description</th>
                         <th>Stock</th>
                         <th>Buying Price</th>
                         <th>Selling Price</th>
@@ -39,8 +40,9 @@
                     <tr>
                         <td><code>{{this.sku}}</code></td>
                         <td>{{this.itemName}}</td>
+                        <td class="small">{{this.specification}}</td>
                         <td>{{this.category}}</td>
-                        <td>{{this.subCategory}}</td>
+                        <td class="small text-secondary">{{this.description}}</td>
                         <td>
                             <span
                                 class="badge {{#if (gt this.minStockLevel this.quantity)}}bg-danger{{else}}bg-success{{/if}}">
@@ -57,8 +59,12 @@
                             {{/if}}
                         </td>
                         <td>
+                            <button class="btn btn-sm btn-outline-warning me-1" title="Quick Edit"
+                                onclick="toggleQuickEdit('{{this._id}}', this)">
+                                <i class="fas fa-bolt"></i>
+                            </button>
                             <button class="btn btn-sm btn-outline-info me-1"
-                                onclick="editItem('{{this._id}}', '{{this.itemName}}', '{{this.sku}}', '{{this.category}}', '{{this.subCategory}}', '{{this.quantity}}', '{{this.buyingPrice}}', '{{this.defaultSellingPrice}}', '{{this.minStockLevel}}')">
+                                onclick="editItem('{{this._id}}', '{{this.itemName}}', '{{this.sku}}', '{{this.category}}', '{{this.subCategory}}', '{{this.quantity}}', '{{this.buyingPrice}}', '{{this.defaultSellingPrice}}', '{{this.minStockLevel}}', '{{this.specification}}', '{{this.description}}')">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <a href="/internal/inventory/delete/{{this._id}}" class="btn btn-sm btn-outline-danger"
@@ -130,6 +136,15 @@
                             <input type="number" name="defaultSellingPrice" class="form-control" required>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specification</label>
+                        <input type="text" name="specification" class="form-control" placeholder="e.g., 10mm, Grade A">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Internal Use)</label>
+                        <textarea name="description" class="form-control" rows="2"
+                            placeholder="Internal details about the item"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -194,6 +209,14 @@
                             <input type="number" name="defaultSellingPrice" id="editSell" class="form-control" required>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specification</label>
+                        <input type="text" name="specification" id="editSpec" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Internal Use)</label>
+                        <textarea name="description" id="editDesc" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -236,7 +259,7 @@
         }
     }
 
-    function editItem(id, name, sku, cat, sub, qty, buy, sell, min) {
+    function editItem(id, name, sku, cat, sub, qty, buy, sell, min, spec, desc) {
         document.getElementById('editForm').action = `/internal/inventory/update/${id}`;
         document.getElementById('editName').value = name;
         document.getElementById('editSku').value = sku;
@@ -246,8 +269,108 @@
         document.getElementById('editBuy').value = buy;
         document.getElementById('editSell').value = sell;
         document.getElementById('editMin').value = min;
+        document.getElementById('editSpec').value = spec || '';
+        document.getElementById('editDesc').value = desc || '';
 
         new bootstrap.Modal(document.getElementById('editItemModal')).show();
+    }
+
+    function toggleQuickEdit(id, btn) {
+        const row = btn.closest('tr');
+        if (row.classList.contains('editing')) return;
+
+        row.classList.add('editing');
+        const cells = row.cells;
+
+        // Store original content
+        row.dataset.originalValues = JSON.stringify({
+            itemName: cells[1].innerText,
+            specification: cells[2].innerText,
+            category: cells[3].innerText,
+            description: cells[4].innerText,
+            quantity: cells[5].innerText.trim(),
+            buyingPrice: cells[6].innerText.replace(/[^0-9.]/g, ''),
+            defaultSellingPrice: cells[7].innerText.replace(/[^0-9.]/g, '')
+        });
+
+        const data = JSON.parse(row.dataset.originalValues);
+
+        cells[1].innerHTML = `<input type="text" class="form-control form-control-sm" value="${data.itemName}">`;
+        cells[2].innerHTML = `<input type="text" class="form-control form-control-sm" value="${data.specification}">`;
+        cells[3].innerHTML = `
+            <select class="form-select form-select-sm">
+                <option value="Electricity" ${data.category === 'Electricity' ? 'selected' : ''}>Electricity</option>
+                <option value="Water" ${data.category === 'Water' ? 'selected' : ''}>Water</option>
+                <option value="Construction" ${data.category === 'Construction' ? 'selected' : ''}>Construction</option>
+            </select>`;
+        cells[4].innerHTML = `<input type="text" class="form-control form-control-sm" value="${data.description}">`;
+        cells[5].innerHTML = `<input type="number" class="form-control form-control-sm" value="${data.quantity}">`;
+        cells[6].innerHTML = `<input type="number" class="form-control form-control-sm" value="${data.buyingPrice}">`;
+        cells[7].innerHTML = `<input type="number" class="form-control form-control-sm" value="${data.defaultSellingPrice}">`;
+
+        cells[9].innerHTML = `
+            <button class="btn btn-sm btn-success me-1" onclick="saveQuickEdit('${id}', this)"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-secondary" onclick="cancelQuickEdit('${id}', this)"><i class="fas fa-times"></i></button>
+        `;
+    }
+
+    function cancelQuickEdit(id, btn) {
+        const row = btn.closest('tr');
+        const data = JSON.parse(row.dataset.originalValues);
+        const cells = row.cells;
+
+        cells[1].innerText = data.itemName;
+        cells[2].innerText = data.specification;
+        cells[3].innerText = data.category;
+        cells[4].innerText = data.description;
+        cells[5].innerHTML = `<span class="badge bg-success">${data.quantity}</span>`; // Simplified status for revert
+        cells[6].innerText = new Intl.NumberFormat('en-US').format(data.buyingPrice) + ' RWF';
+        cells[7].innerText = new Intl.NumberFormat('en-US').format(data.defaultSellingPrice) + ' RWF';
+
+        // Revert Actions
+        const sku = cells[0].innerText.trim();
+        // Since we don't have all data (minStock etc) easily here, we might need to refresh or store more
+        // But for a professional feel, we'll reload the page if it's too complex or just restore the buttons
+        location.reload();
+    }
+
+    async function saveQuickEdit(id, btn) {
+        const row = btn.closest('tr');
+        const cells = row.cells;
+        const payload = {
+            itemName: cells[1].querySelector('input').value,
+            specification: cells[2].querySelector('input').value,
+            category: cells[3].querySelector('select').value,
+            description: cells[4].querySelector('input').value,
+            quantity: cells[5].querySelector('input').value,
+            buyingPrice: cells[6].querySelector('input').value,
+            defaultSellingPrice: cells[7].querySelector('input').value,
+            sku: cells[0].innerText.trim(), // SKU is usually required by validation
+            subCategory: 'Quick Edit', // Placeholder if required
+            minStockLevel: 5 // Default
+        };
+
+        try {
+            const response = await fetch(`/internal/inventory/update/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                location.reload(); // Refresh to ensure everything (DataTables, badges) is correct
+            } else {
+                alert('Error: ' + (result.message || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to save changes.');
+        }
     }
 
     $(document).ready(function () {
@@ -259,7 +382,7 @@
         });
 
         $('#categoryFilter').on('change', function () {
-            table.column(2).search(this.value).draw();
+            table.column(3).search(this.value).draw();
         });
     });
 </script>
