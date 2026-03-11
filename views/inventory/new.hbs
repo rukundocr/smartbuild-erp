@@ -1,0 +1,192 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">Add Bulk Inventory Items</h2>
+        <a href="/internal/inventory" class="btn btn-outline-secondary">Back to Inventory</a>
+    </div>
+
+    <form action="/internal/inventory/add" method="POST">
+        <div class="card bg-dark border-secondary shadow mb-4">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr class="text-secondary small">
+                            <th width="3%">#</th>
+                            <th width="12%">ITEM NAME</th>
+                            <th width="10%">CATEGORY</th>
+                            <th width="10%">SUB-CATEGORY</th>
+                            <th width="8%">SKU</th>
+                            <th width="7%">QTY</th>
+                            <th width="7%">MIN STOCK</th>
+                            <th width="10%">BUYING (RWF)</th>
+                            <th width="10%">SELLING (RWF)</th>
+                            <th width="10%">SPECS</th>
+                            <th width="11%">DESCRIPTION</th>
+                            <th width="2%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryItemsBody">
+                        <tr>
+                            <td class="text-secondary small">1</td>
+                            <td><input type="text" name="items[0][itemName]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" required>
+                            </td>
+                            <td>
+                                <select name="items[0][category]"
+                                    class="form-select form-select-sm bg-black text-white border-secondary" required
+                                    onchange="updateRowSubCategories(this)">
+                                    <option value="">Select</option>
+                                    <option value="Electricity">Electricity</option>
+                                    <option value="Water">Water</option>
+                                    <option value="Construction">Construction</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="items[0][subCategory]"
+                                    class="form-select form-select-sm bg-black text-white border-secondary" required>
+                                    <option value="">Select Category First</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="items[0][sku]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" required>
+                            </td>
+                            <td><input type="number" name="items[0][quantity]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" value="0"
+                                    required></td>
+                            <td><input type="number" name="items[0][minStockLevel]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" value="5"
+                                    required></td>
+                            <td><input type="number" name="items[0][buyingPrice]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" required>
+                            </td>
+                            <td><input type="number" name="items[0][defaultSellingPrice]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary" required>
+                            </td>
+                            <td><input type="text" name="items[0][specification]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary"
+                                    placeholder="e.g. 10mm"></td>
+                            <td><input type="text" name="items[0][description]"
+                                    class="form-control form-control-sm bg-black text-white border-secondary"
+                                    placeholder="Notes..."></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer border-secondary bg-black bg-opacity-50">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">+ Add Row</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-3 shadow mb-5">SAVE ALL ITEMS TO
+            INVENTORY</button>
+    </form>
+</div>
+
+<script>
+    const subCategories = {
+        Electricity: ['Conductors', 'Protection', 'Distribution/Control', 'Terminals/Access'],
+        Water: ['Pipes', 'Fittings', 'Control/Flow', 'Infrastructure/Storage'],
+        Construction: ['Structural', 'Envelope/Exterior', 'Finishes/Interiors', 'Site Tools']
+    };
+
+    let rowCount = 1;
+
+    function getHighestFormSKU(category) {
+        const prefixMap = {
+            'Electricity': 'ELE-',
+            'Water': 'WAT-',
+            'Construction': 'CON-'
+        };
+        const prefix = prefixMap[category] || 'GEN-';
+        let maxNum = 0;
+
+        document.querySelectorAll('input[name*="[sku]"]').forEach(input => {
+            const val = input.value;
+            if (val.startsWith(prefix)) {
+                const parts = val.split('-');
+                const num = parseInt(parts[parts.length - 1]);
+                if (!isNaN(num) && num > maxNum) {
+                    maxNum = num;
+                }
+            }
+        });
+        return maxNum;
+    }
+
+    function updateRowSubCategories(select) {
+        const row = select.closest('tr');
+        const category = select.value;
+        const subSelect = row.querySelector('select[name*="[subCategory]"]');
+        const skuInput = row.querySelector('input[name*="[sku]"]');
+
+        subSelect.innerHTML = '<option value="">Select Sub-Category</option>';
+
+        if (category && subCategories[category]) {
+            subCategories[category].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                subSelect.appendChild(option);
+            });
+
+            // Fetch SKU for this specific row
+            fetch(`/internal/inventory/next-sku/${category}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.nextSku) {
+                        const serverSkuParts = data.nextSku.split('-');
+                        const serverBaseNum = parseInt(serverSkuParts[serverSkuParts.length - 1]);
+                        const prefix = data.nextSku.substring(0, data.nextSku.length - 4);
+
+                        const highestFormNum = getHighestFormSKU(category);
+
+                        // Use the higher of server suggestion or current form max + 1
+                        const nextNum = Math.max(serverBaseNum, highestFormNum + 1);
+                        skuInput.value = `${prefix}${nextNum.toString().padStart(4, '0')}`;
+                    }
+                });
+        }
+    }
+
+    function addRow() {
+        const tbody = document.getElementById('inventoryItemsBody');
+        const row = `<tr>
+            <td class="text-secondary small">${rowCount + 1}</td>
+            <td><input type="text" name="items[${rowCount}][itemName]" class="form-control form-control-sm bg-black text-white border-secondary" required></td>
+            <td>
+                <select name="items[${rowCount}][category]" class="form-select form-select-sm bg-black text-white border-secondary" required onchange="updateRowSubCategories(this)">
+                    <option value="">Select</option>
+                    <option value="Electricity">Electricity</option>
+                    <option value="Water">Water</option>
+                    <option value="Construction">Construction</option>
+                </select>
+            </td>
+            <td>
+                <select name="items[${rowCount}][subCategory]" class="form-select form-select-sm bg-black text-white border-secondary" required>
+                    <option value="">Select Category First</option>
+                </select>
+            </td>
+            <td><input type="text" name="items[${rowCount}][sku]" class="form-control form-control-sm bg-black text-white border-secondary" required></td>
+            <td><input type="number" name="items[${rowCount}][quantity]" class="form-control form-control-sm bg-black text-white border-secondary" value="0" required></td>
+            <td><input type="number" name="items[${rowCount}][minStockLevel]" class="form-control form-control-sm bg-black text-white border-secondary" value="5" required></td>
+            <td><input type="number" name="items[${rowCount}][buyingPrice]" class="form-control form-control-sm bg-black text-white border-secondary" required></td>
+            <td><input type="number" name="items[${rowCount}][defaultSellingPrice]" class="form-control form-control-sm bg-black text-white border-secondary" required></td>
+            <td><input type="text" name="items[${rowCount}][specification]" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="e.g. 10mm"></td>
+            <td><input type="text" name="items[${rowCount}][description]" class="form-control form-control-sm bg-black text-white border-secondary" placeholder="Notes..."></td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); updateRowNumbers();">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+        rowCount++;
+    }
+
+    function updateRowNumbers() {
+        const rows = document.querySelectorAll('#inventoryItemsBody tr');
+        rows.forEach((row, index) => {
+            row.querySelector('td:first-child').innerText = index + 1;
+        });
+    }
+</script>

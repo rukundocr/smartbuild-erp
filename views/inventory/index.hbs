@@ -5,9 +5,9 @@
             <a href="/internal/inventory/download-pdf" id="downloadPdfBtn" class="btn btn-outline-danger me-2">
                 <i class="fas fa-file-pdf me-2"></i> Download PDF
             </a>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
-                <i class="fas fa-plus me-2"></i> Add Item
-            </button>
+            <a href="/internal/inventory/new" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Add Items
+            </a>
         </div>
     </div>
 
@@ -85,80 +85,7 @@
     </div>
 </div>
 
-<!-- Add Item Modal -->
-<div class="modal fade" id="addItemModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark border-secondary">
-            <form action="/internal/inventory/add" method="POST">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">Add Inventory Item</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Item Name</label>
-                        <input type="text" name="itemName" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">SKU</label>
-                        <input type="text" name="sku" class="form-control" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Category</label>
-                            <select name="category" id="modalCategory" class="form-select" required
-                                onchange="updateSubCategories(this.value, 'modalSubCategory')">
-                                <option value="">Select Category</option>
-                                <option value="Electricity">Electricity</option>
-                                <option value="Water">Water</option>
-                                <option value="Construction">Construction</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Sub-Category</label>
-                            <select name="subCategory" id="modalSubCategory" class="form-select" required>
-                                <option value="">Select Category First</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Initial Qty</label>
-                            <input type="number" name="quantity" class="form-control" value="0" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Min Stock</label>
-                            <input type="number" name="minStockLevel" class="form-control" value="5" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Buying Price (RWF)</label>
-                            <input type="number" name="buyingPrice" class="form-control" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Selling Price (RWF)</label>
-                            <input type="number" name="defaultSellingPrice" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Specification</label>
-                        <input type="text" name="specification" class="form-control" placeholder="e.g., 10mm, Grade A">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description (Internal Use)</label>
-                        <textarea name="description" class="form-control" rows="2"
-                            placeholder="Internal details about the item"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Item</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 
 <!-- Edit Item Modal -->
 <div class="modal fade" id="editItemModal" tabindex="-1">

@@ -4,6 +4,7 @@ const inventoryController = require('../controllers/inventoryController');
 const { ensureAuthenticated, ensureAdmin } = require('../middleware/auth');
 
 router.get('/', ensureAuthenticated, inventoryController.getInventory);
+router.get('/new', ensureAuthenticated, inventoryController.getAddInventoryForm);
 router.post('/add', ensureAuthenticated, inventoryController.addInventory);
 router.post('/update/:id', ensureAuthenticated, inventoryController.updateInventory);
 router.get('/delete/:id', ensureAuthenticated, ensureAdmin, inventoryController.deleteInventory);

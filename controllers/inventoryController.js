@@ -16,25 +16,53 @@ exports.getInventory = async (req, res) => {
     }
 };
 
+exports.getAddInventoryForm = async (req, res) => {
+    res.render('inventory/new', {
+        title: 'Add New Inventory'
+    });
+};
+
 exports.addInventory = async (req, res) => {
     try {
-        const { error } = validateInventory(req.body);
-        if (error) {
-            req.flash('error_msg', error.details[0].message);
-            return res.redirect('/internal/inventory');
+        const { items } = req.body;
+        const itemsArray = Array.isArray(items) ? items : Object.values(items || {});
+
+        if (itemsArray.length === 0) {
+            req.flash('error_msg', 'No items added');
+            return res.redirect('/internal/inventory/new');
         }
 
-        const newItem = new Inventory(req.body);
-        await newItem.save();
+        const savedItems = [];
+        for (const itemData of itemsArray) {
+            // Basic cleaning of number fields
+            itemData.quantity = parseFloat(itemData.quantity) || 0;
+            itemData.minStockLevel = parseFloat(itemData.minStockLevel) || 0;
+            itemData.buyingPrice = parseFloat(itemData.buyingPrice) || 0;
+            itemData.defaultSellingPrice = parseFloat(itemData.defaultSellingPrice) || 0;
 
-        await logAction(req.user._id, 'CREATE', 'INTERNAL_INVENTORY', newItem._id, `Added item: ${newItem.itemName}`);
+            const { error } = validateInventory(itemData);
+            if (error) {
+                req.flash('error_msg', `Error in item "${itemData.itemName}": ${error.details[0].message}`);
+                return res.redirect('/internal/inventory/new');
+            }
 
-        req.flash('success_msg', 'Item added to inventory');
+            const newItem = new Inventory(itemData);
+            await newItem.save();
+            savedItems.push(newItem);
+
+            await logAction(req.user._id, 'CREATE', 'INTERNAL_INVENTORY', newItem._id, `Added item: ${newItem.itemName}`);
+        }
+
+        req.flash('success_msg', `${savedItems.length} items added to inventory`);
         res.redirect('/internal/inventory');
     } catch (err) {
-        console.error(err);
-        req.flash('error_msg', 'Error adding item');
-        res.redirect('/internal/inventory');
+        console.error("Add Inventory Error:", err);
+        if (err.code === 11000) {
+            req.flash('error_msg', 'Error: One of the SKUs already exists. SKUs must be unique.');
+        } else {
+            req.flash('error_msg', 'Error adding items');
+        }
+        res.redirect('/internal/inventory/new');
     }
 };
 

@@ -40,12 +40,12 @@ const generateInventoryPDF = (items, category = 'All') => {
         const sell = item.defaultSellingPrice || 0;
         const profit = sell - buy;
         const totalProfit = profit * qty;
-        const totalValue = buy * qty;
 
         return [
             index + 1,
             item.sku,
             item.itemName,
+            item.description || '-',
             item.category,
             item.specification || '-',
             qty,
@@ -57,16 +57,16 @@ const generateInventoryPDF = (items, category = 'All') => {
 
     autoTable(doc, {
         startY: 60,
-        head: [['#', 'SKU', 'ITEM NAME', 'CATEGORY', 'SPECIFICATION', 'QTY', 'BUYING', 'SELLING', 'PROFIT']],
+        head: [['#', 'SKU', 'ITEM NAME', 'DESCRIPTION', 'CATEGORY', 'SPECIFICATION', 'QTY', 'BUYING', 'SELLING', 'PROFIT']],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [0, 0, 0] }, // Black header to match theme
-        styles: { fontSize: 8 }, // Reverted to slightly larger font
+        styles: { fontSize: 7 }, // Slightly smaller font to fit extra column
         columnStyles: {
-            5: { halign: 'center' }, // Qty
-            6: { halign: 'right' },  // Buying
-            7: { halign: 'right' },  // Selling
-            8: { halign: 'right' }   // Profit
+            6: { halign: 'center' }, // Qty
+            7: { halign: 'right' },  // Buying
+            8: { halign: 'right' },  // Selling
+            9: { halign: 'right' }   // Profit
         }
     });
 
