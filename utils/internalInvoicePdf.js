@@ -1,7 +1,11 @@
 const { jsPDF } = require("jspdf");
 const autoTable = require("jspdf-autotable").default;
 
-const generateInternalPDF = async (invoice) => {
+const generateInternalPDF = async (invoice, format = 'a4') => {
+    if (format === 'thermal') {
+        return generateThermalPDF(invoice);
+    }
+
     const doc = new jsPDF();
     const now = new Date();
 
@@ -66,6 +70,120 @@ const generateInternalPDF = async (invoice) => {
     const timestamp = `Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`;
     doc.text(timestamp, 14, 285);
     doc.text("This is an internal document for project tracking purposes.", 14, 290);
+
+    return doc.output('arraybuffer');
+};
+
+const generateThermalPDF = (invoice) => {
+    const pageWidth = 80;
+    const margin = 5;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Calculate height roughly based on items
+    let pageHeight = 100 + (invoice.items.length * 15);
+
+    const doc = new jsPDF({
+        unit: 'mm',
+        format: [pageWidth, pageHeight]
+    });
+
+    let y = 10;
+
+    // Header
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("SMARTBUILD LTD", pageWidth / 2, y, { align: 'center' });
+
+    y += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("Internal Inventory Supply", pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    doc.text("+250 785193526", pageWidth / 2, y, { align: 'center' });
+
+    y += 4;
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // Invoice Info
+    y += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE NO:", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(invoice.invoiceNo, margin + 25, y);
+
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("DATE:", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(new Date(invoice.date).toLocaleDateString('en-GB'), margin + 15, y);
+
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("STATUS:", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(invoice.status, margin + 18, y);
+
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("CLIENT:", margin, y);
+    doc.setFont("helvetica", "normal");
+    const clName = invoice.clientId.clientName.toUpperCase();
+    doc.text(clName.length > 20 ? clName.slice(0, 20) : clName, margin + 18, y);
+
+    y += 5;
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // Table Header
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("Item Details", margin, y);
+    doc.text("Total", pageWidth - margin, y, { align: 'right' });
+
+    y += 2;
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // Table Body
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+
+    invoice.items.forEach((item) => {
+        const itemName = item.itemId.specification
+            ? `${item.itemId.itemName} - ${item.itemId.specification}`
+            : item.itemId.itemName;
+
+        // Wrap text to use full width
+        const splitTitle = doc.splitTextToSize(itemName, pageWidth - (margin * 2));
+        doc.text(splitTitle, margin, y);
+        y += (splitTitle.length * 4);
+
+        // Quantity x Unit Price = Total
+        doc.text(`${item.qty} x ${item.priceAtSale.toLocaleString()} RWF`, margin + 5, y);
+        doc.text((item.qty * item.priceAtSale).toLocaleString(), pageWidth - margin, y, { align: 'right' });
+
+        y += 6;
+    });
+
+    y += 1;
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // Total
+    y += 6;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("GRAND TOTAL:", margin, y);
+    doc.text((invoice.grandTotal).toLocaleString() + " RWF", pageWidth - margin, y, { align: 'right' });
+
+    // Footer
+    y += 10;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for your business!", pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    doc.text("*** Internal Document ***", pageWidth / 2, y, { align: 'center' });
 
     return doc.output('arraybuffer');
 };

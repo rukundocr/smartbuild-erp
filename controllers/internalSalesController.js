@@ -24,6 +24,28 @@ exports.getCreateInvoice = async (req, res) => {
 
 exports.createInvoice = async (req, res) => {
     try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const prefix = `${year}-${month}-`;
+
+        const lastInvoice = await InternalInvoice.findOne({
+            invoiceNo: new RegExp(`^${prefix}`)
+        }).sort({ createdAt: -1 });
+
+        let sequence = 1;
+        if (lastInvoice) {
+            const parts = lastInvoice.invoiceNo.split('-');
+            const lastNum = parseInt(parts[parts.length - 1]);
+            if (!isNaN(lastNum)) sequence = lastNum + 1;
+        }
+
+        req.body.invoiceNo = `${prefix}${String(sequence).padStart(3, '0')}`;
+
+        if (req.body.items && !Array.isArray(req.body.items)) {
+            req.body.items = Object.values(req.body.items);
+        }
+
         const { error } = validateInternalInvoice(req.body);
         if (error) {
             req.flash('error_msg', error.details[0].message);
@@ -148,12 +170,13 @@ exports.downloadPDF = async (req, res) => {
 
         if (!invoice) return res.status(404).send('Invoice not found');
 
-        const pdfBuffer = await generateInternalPDF(invoice);
+        const format = req.query.format === 'thermal' ? 'thermal' : 'a4';
+        const pdfBuffer = await generateInternalPDF(invoice, format);
 
-        await logAction(req.user._id, 'EXPORT', 'INTERNAL_SALES', req.params.id, `Exported invoice PDF: ${invoice.invoiceNo}`);
+        await logAction(req.user._id, 'EXPORT', 'INTERNAL_SALES', req.params.id, `Exported invoice PDF: ${invoice.invoiceNo} (${format})`);
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Invoice_${invoice.invoiceNo}.pdf`);
+        res.setHeader('Content-Disposition', `inline; filename=Invoice_${invoice.invoiceNo}.pdf`);
         res.send(Buffer.from(pdfBuffer));
     } catch (err) {
         console.error(err);
@@ -183,6 +206,10 @@ exports.getEditInvoice = async (req, res) => {
 
 exports.updateInvoice = async (req, res) => {
     try {
+        if (req.body.items && !Array.isArray(req.body.items)) {
+            req.body.items = Object.values(req.body.items);
+        }
+
         const { error } = validateInternalInvoice(req.body);
         if (error) {
             req.flash('error_msg', error.details[0].message);
@@ -199,6 +226,8 @@ exports.updateInvoice = async (req, res) => {
 
         const oldInvoice = await InternalInvoice.findById(req.params.id);
         if (!oldInvoice) return res.redirect('/internal/sales/summary');
+
+        req.body.status = req.body.status || oldInvoice.status;
 
         // Restore stock if it wasn't cancelled
         if (oldInvoice.status !== 'Cancelled') {

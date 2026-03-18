@@ -21,7 +21,7 @@ const internalInvoiceSchema = new mongoose.Schema({
         qty: {
             type: Number,
             required: true,
-            min: 1
+            min: 0.001
         },
         costAtSale: {
             type: Number,
@@ -53,7 +53,7 @@ const internalInvoiceSchema = new mongoose.Schema({
 const validateInternalInvoice = (data) => {
     const itemSchema = Joi.object({
         itemId: Joi.string().required(), // Joi validates string ID for input
-        qty: Joi.number().min(1).required(),
+        qty: Joi.number().min(0.001).required(),
         costAtSale: Joi.number().min(0).required(),
         priceAtSale: Joi.number().min(0).required()
     });

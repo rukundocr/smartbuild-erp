@@ -107,11 +107,28 @@
                                     class="btn btn-sm btn-outline-light" title="Print Receipt">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                <a href="/internal/sales/download-pdf/{{this._id}}" class="btn btn-sm btn-outline-info"
-                                    title="Download PDF">
-                                    <i class="fas fa-file-pdf"></i>
-                                </a>
-
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown" title="Print/Download PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="/internal/sales/download-pdf/{{this._id}}?format=a4"
+                                                target="_blank">
+                                                <i class="fas fa-file-alt me-2"></i> Print A4 Size
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="/internal/sales/download-pdf/{{this._id}}?format=thermal"
+                                                target="_blank">
+                                                <i class="fas fa-receipt me-2"></i> Print Thermal (80mm)
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                                 <div class="dropdown d-inline-block">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                                         data-bs-toggle="dropdown">

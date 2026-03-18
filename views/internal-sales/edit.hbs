@@ -43,7 +43,8 @@
                                     <option value="{{this._id}}" data-price="{{this.defaultSellingPrice}}"
                                         data-cost="{{this.buyingPrice}}" data-stock="{{this.quantity}}"
                                         data-spec="{{this.specification}}" {{#if (eq (toString this._id) (toString
-                                        ../itemId._id))}}selected{{/if}} {{#if (lte this.quantity 0)}}disabled{{/if}}>
+                                        ../itemId._id))}} selected {{else}} {{#if (lte this.quantity 0)}}disabled{{/if}}
+                                        {{/if}}>
                                         {{this.itemName}} {{#if this.specification}}- {{this.specification}}{{/if}}
                                         (Stock: {{this.quantity}}){{#if (lte this.quantity 0)}} - OUT
                                         OF STOCK{{/if}}
@@ -54,7 +55,8 @@
                             <div class="col-md-2">
                                 <label class="form-label small">Qty</label>
                                 <input type="number" name="items[{{@index}}][qty]" class="form-control qty-input"
-                                    value="{{this.qty}}" min="1" required onchange="calculateRow({{@index}})">
+                                    value="{{this.qty}}" min="0.001" step="any" required
+                                    onchange="calculateRow({{@index}})">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small">Price (RWF)</label>
@@ -133,7 +135,7 @@
             </select>
         </div>
         <div class="col-md-2">
-            <input type="number" name="items[${rowCount}][qty]" class="form-control qty-input" value="1" min="1" required onchange="calculateRow(${rowCount})">
+            <input type="number" name="items[${rowCount}][qty]" class="form-control qty-input" value="1" min="0.001" step="any" required onchange="calculateRow(${rowCount})">
         </div>
         <div class="col-md-3">
             <input type="number" name="items[${rowCount}][priceAtSale]" class="form-control price-input" required onchange="calculateRow(${rowCount})">
@@ -237,8 +239,8 @@
             const select = row.querySelector('.item-select');
             const qtyInput = row.querySelector('.qty-input');
             const itemId = select.value;
-            const qty = parseInt(qtyInput.value) || 0;
-            const stock = parseInt(select.options[select.selectedIndex].dataset.stock) || 0;
+            const qty = parseFloat(qtyInput.value) || 0;
+            const stock = parseFloat(select.options[select.selectedIndex]?.dataset.stock) || 0;
 
             if (!itemId) {
                 alert("Please select an item for all rows.");

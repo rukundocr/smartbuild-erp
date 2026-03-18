@@ -23,8 +23,8 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Invoice Number</label>
-                            <input type="text" name="invoiceNo" class="form-control"
-                                value="INT-{{add invoiceCount 1001}}" required>
+                            <input type="text" name="invoiceNo" class="form-control" value="Auto-generated on Save"
+                                readonly>
                         </div>
                     </div>
 
@@ -50,7 +50,7 @@
                             <div class="col-md-2">
                                 <label class="form-label small">Qty</label>
                                 <input type="number" name="items[0][qty]" class="form-control qty-input" value="1"
-                                    min="1" required onchange="calculateRow(0)">
+                                    min="0.001" step="any" required onchange="calculateRow(0)">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small">Price (RWF)</label>
@@ -126,7 +126,7 @@
             </select>
         </div>
         <div class="col-md-2">
-            <input type="number" name="items[${rowCount}][qty]" class="form-control qty-input" value="1" min="1" required onchange="calculateRow(${rowCount})">
+            <input type="number" name="items[${rowCount}][qty]" class="form-control qty-input" value="1" min="0.001" step="any" required onchange="calculateRow(${rowCount})">
         </div>
         <div class="col-md-3">
             <input type="number" name="items[${rowCount}][priceAtSale]" class="form-control price-input" required onchange="calculateRow(${rowCount})">
@@ -226,8 +226,8 @@
             const select = row.querySelector('.item-select');
             const qtyInput = row.querySelector('.qty-input');
             const itemId = select.value;
-            const qty = parseInt(qtyInput.value) || 0;
-            const stock = parseInt(select.options[select.selectedIndex].dataset.stock) || 0;
+            const qty = parseFloat(qtyInput.value) || 0;
+            const stock = parseFloat(select.options[select.selectedIndex]?.dataset.stock) || 0;
 
             if (!itemId) {
                 alert("Please select an item for all rows.");

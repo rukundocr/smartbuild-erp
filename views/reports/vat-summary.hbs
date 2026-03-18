@@ -1,107 +1,268 @@
-{{!-- Keep the existing <style> and Print Header sections as they are --}}
+{{!-- Layout for Tax Declaration Summary with Tabbed View --}}
 
 <div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <div>
         <h2 class="fw-bold text-white mb-1">Tax Declaration Summary</h2>
         <p class="text-secondary mb-0"><i class="fas fa-university me-1 text-info"></i> RRA Remittance Overview</p>
     </div>
-    <button onclick="window.print()" class="btn btn-outline-light fw-bold shadow-sm">
-        <i class="fas fa-print me-1"></i> PRINT / SAVE PDF
-    </button>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-outline-light fw-bold shadow-sm">
+            <i class="fas fa-print me-1"></i> PRINT / SAVE PDF
+        </button>
+    </div>
 </div>
 
-{{!-- Filter Section remains the same --}}
+{{!-- Filter Section --}}
+<div class="card bg-dark border-secondary p-4 mb-4 no-print shadow-sm">
+    <form action="/reports/vat-summary" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="small text-secondary fw-bold text-uppercase mb-2">Select Fiscal Year</label>
+            <select name="year" class="form-select bg-black text-white border-secondary shadow-sm"
+                onchange="this.form.submit()">
+                {{#each years}}
+                <option value="{{this}}" {{#if (eq this ../selectedYear)}}selected{{/if}}>Fiscal Year {{this}} (Jan -
+                    Dec)</option>
+                {{/each}}
+            </select>
+        </div>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
-            <label class="small text-secondary d-block mb-1 text-uppercase">VAT Output</label>
-            <h3 class="text-info fw-bold mb-0">{{formatCurrency totalOutput}}</h3>
+        <div class="col-md-3">
+            <label class="small text-secondary fw-bold text-uppercase mb-2">Custom From</label>
+            <input type="date" name="startDate" value="{{startDate}}"
+                class="form-control bg-black text-white border-secondary shadow-sm">
+        </div>
+
+        <div class="col-md-3">
+            <label class="small text-secondary fw-bold text-uppercase mb-2">Custom To</label>
+            <input type="date" name="endDate" value="{{endDate}}"
+                class="form-control bg-black text-white border-secondary shadow-sm">
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary fw-bold w-100 shadow-sm">
+                <i class="fas fa-sync-alt me-1"></i> APPLY FILTER
+            </button>
+            <a href="/reports/vat-summary" class="btn btn-outline-secondary fw-bold w-100 shadow-sm">
+                <i class="fas fa-undo me-1"></i> RESET
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs border-secondary mb-4 no-print" id="taxReportTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-white fw-bold border-secondary bg-dark px-4 py-3" id="summary-tab"
+            data-bs-toggle="tab" data-bs-target="#summary-content" type="button" role="tab">
+            <i class="fas fa-list-alt me-2"></i>Tax Declaration Summary
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-white fw-bold border-secondary bg-dark px-4 py-3" id="reconciliation-tab"
+            data-bs-toggle="tab" data-bs-target="#reconciliation-content" type="button" role="tab">
+            <i class="fas fa-calculator me-2"></i>RRA Tax Reconciliation
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-white fw-bold border-secondary bg-dark px-4 py-3" id="cit-tab" data-bs-toggle="tab"
+            data-bs-target="#cit-content" type="button" role="tab">
+            <i class="fas fa-chart-line me-2"></i>Corporate Income Tax (CIT)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="taxReportTabsContent">
+    <!-- Tab 1: Tax Declaration Summary -->
+    <div class="tab-pane fade show active" id="summary-content" role="tabpanel">
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+                    <label class="small text-secondary d-block mb-1 text-uppercase">VAT Output</label>
+                    <h3 class="text-info fw-bold mb-0">{{formatCurrency totalOutput}}</h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+                    <label class="small text-secondary d-block mb-1 text-uppercase">VAT Input</label>
+                    <h3 class="text-warning fw-bold mb-0">{{formatCurrency totalInput}}</h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
+                    <label class="small text-secondary d-block mb-1 text-uppercase">WHT (15% Workers)</label>
+                    <h3 class="text-primary fw-bold mb-0">{{formatCurrency totalWHT}}</h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div
+                    class="card bg-dark p-4 h-100 text-center shadow border-2 {{#if (gt totalTaxLiability 0)}}border-danger{{else}}border-success{{/if}} card-stat">
+                    <label class="small text-secondary d-block mb-1 text-uppercase">Total Due to RRA</label>
+                    <h3 class="{{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}} fw-bold mb-0">
+                        {{formatCurrency totalTaxLiability}}
+                    </h3>
+                    <div class="small mt-1 text-uppercase fw-bold">
+                        {{#if (gt totalTaxLiability 0)}}
+                        <span class="text-danger"><i class="fas fa-money-bill-wave me-1"></i> Payment Required</span>
+                        {{else}}
+                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> Total Tax Credit</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
-            <label class="small text-secondary d-block mb-1 text-uppercase">VAT Input</label>
-            <h3 class="text-warning fw-bold mb-0">{{formatCurrency totalInput}}</h3>
+    <!-- Tab 2: RRA Tax Reconciliation -->
+    <div class="tab-pane fade" id="reconciliation-content" role="tabpanel">
+        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+            <i class="fas fa-calculator me-2 text-info"></i> RRA Tax Reconciliation
+        </h5>
+        <div class="card border-secondary bg-dark overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-black text-secondary small">
+                        <tr>
+                            <th class="ps-4">TAX COMPONENT</th>
+                            <th>NATURE</th>
+                            <th class="text-end pe-4">BALANCE (RWF)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="ps-4 fw-bold">VAT Output (Sales)</td>
+                            <td class="text-secondary">Tax collected from clients</td>
+                            <td class="text-end pe-4 text-info">+ {{formatCurrency totalOutput}}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 fw-bold">VAT Input (Purchases)</td>
+                            <td class="text-secondary">Tax paid to suppliers</td>
+                            <td class="text-end pe-4 text-warning">- {{formatCurrency totalInput}}</td>
+                        </tr>
+                        <tr class="bg-black bg-opacity-25">
+                            <td class="ps-4 italic">Sub-Total VAT Position</td>
+                            <td class="small italic text-secondary">Output minus Input</td>
+                            <td class="text-end pe-4 fw-bold">{{formatCurrency vatPayable}}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">WHT (Casual Workers)</td>
+                            <td class="text-secondary">15% Tax withheld from salaries</td>
+                            <td class="text-end pe-4 text-primary">+ {{formatCurrency totalWHT}}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-top border-secondary">
+                        <tr class="bg-black">
+                            <td colspan="2" class="ps-4 py-3">
+                                <h5 class="mb-0 fw-bold text-white">TOTAL REMITTANCE (VAT + WHT)</h5>
+                            </td>
+                            <td class="text-end pe-4 py-3">
+                                <h4
+                                    class="mb-0 fw-bold {{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}}">
+                                    {{formatCurrency totalTaxLiability}}
+                                </h4>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary p-4 h-100 text-center shadow card-stat">
-            <label class="small text-secondary d-block mb-1 text-uppercase">WHT (15% Workers)</label>
-            <h3 class="text-primary fw-bold mb-0">{{formatCurrency totalWHT}}</h3>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card bg-dark p-4 h-100 text-center shadow border-2 {{#if (gt totalTaxLiability 0)}}border-danger{{else}}border-success{{/if}} card-stat">
-            <label class="small text-secondary d-block mb-1 text-uppercase">Total Due to RRA</label>
-            <h3 class="{{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}} fw-bold mb-0">
-                {{formatCurrency totalTaxLiability}}
-            </h3>
-            <div class="small mt-1 text-uppercase fw-bold">
-                {{#if (gt totalTaxLiability 0)}}
-                    <span class="text-danger"><i class="fas fa-money-bill-wave me-1"></i> Payment Required</span>
-                {{else}}
-                    <span class="text-success"><i class="fas fa-check-circle me-1"></i> Total Tax Credit</span>
-                {{/if}}
+    <!-- Tab 3: Corporate Income Tax (CIT) Calculation -->
+    <div class="tab-pane fade" id="cit-content" role="tabpanel">
+        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+            <i class="fas fa-chart-line me-2 text-primary"></i> Corporate Income Tax (CIT) Calculation
+        </h5>
+        <div class="card border-secondary bg-dark overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-black text-secondary small">
+                        <tr>
+                            <th class="ps-4">COMPONENT</th>
+                            <th class="text-end pe-4">AMOUNT (RWF)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="ps-4 fw-bold">Total Sales</td>
+                            <td class="text-end pe-4 text-info">{{formatCurrency totalSales}}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 fw-bold">Total Purchases</td>
+                            <td class="text-end pe-4 text-warning">- {{formatCurrency totalPurchases}}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 fw-bold">Withholding Taxes (WHT)</td>
+                            <td class="text-end pe-4 text-warning">- {{formatCurrency totalWHT}}</td>
+                        </tr>
+                        <tr class="bg-black bg-opacity-25">
+                            <td class="ps-4 italic text-uppercase text-secondary">
+                                {{#if (gt annualProfit 0)}}
+                                Annual Profit
+                                {{else}}
+                                Annual loss
+                                {{/if}}
+                            </td>
+                            <td
+                                class="text-end pe-4 fw-bold {{#if (gt annualProfit 0)}}text-success{{else}}text-danger{{/if}}">
+                                {{formatCurrency annualProfit}}
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-top border-secondary">
+                        <tr class="bg-black">
+                            <td class="ps-4 py-3">
+                                <h5 class="mb-0 fw-bold text-white">CIT TAX (28% of Profit)</h5>
+                            </td>
+                            <td class="text-end pe-4 py-3">
+                                <h4 class="mb-0 fw-bold text-danger">
+                                    {{formatCurrency citTax}}
+                                </h4>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<div class="mt-5">
-    <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
-        <i class="fas fa-calculator me-2 text-info"></i> RRA Tax Reconciliation
-    </h5>
-    <div class="card border-secondary bg-dark overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 align-middle">
-                <thead class="bg-black text-secondary small">
-                    <tr>
-                        <th class="ps-4">TAX COMPONENT</th>
-                        <th>NATURE</th>
-                        <th class="text-end pe-4">BALANCE (RWF)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="ps-4 fw-bold">VAT Output (Sales)</td>
-                        <td class="text-secondary">Tax collected from clients</td>
-                        <td class="text-end pe-4 text-info">+ {{formatCurrency totalOutput}}</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold">VAT Input (Purchases)</td>
-                        <td class="text-secondary">Tax paid to suppliers</td>
-                        <td class="text-end pe-4 text-warning">- {{formatCurrency totalInput}}</td>
-                    </tr>
-                    <tr class="bg-black bg-opacity-25">
-                        <td class="ps-4 italic">Sub-Total VAT Position</td>
-                        <td class="small italic text-secondary">Output minus Input</td>
-                        <td class="text-end pe-4 fw-bold">{{formatCurrency vatPayable}}</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">WHT (Casual Workers)</td>
-                        <td class="text-secondary">15% Tax withheld from salaries</td>
-                        <td class="text-end pe-4 text-primary">+ {{formatCurrency totalWHT}}</td>
-                    </tr>
-                </tbody>
-                <tfoot class="border-top border-secondary">
-                    <tr class="bg-black">
-                        <td colspan="2" class="ps-4 py-3">
-                            <h5 class="mb-0 fw-bold text-white">TOTAL REMITTANCE (VAT + WHT)</h5>
-                        </td>
-                        <td class="text-end pe-4 py-3">
-                            <h4 class="mb-0 fw-bold {{#if (gt totalTaxLiability 0)}}text-danger{{else}}text-success{{/if}}">
-                                {{formatCurrency totalTaxLiability}}
-                            </h4>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-</div>
+<style>
+    .nav-tabs .nav-link {
+        border-radius: 8px 8px 0 0;
+        margin-right: 5px;
+        opacity: 0.7;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #1a1d20 !important;
+        border-bottom-color: transparent !important;
+        opacity: 1;
+        border-top: 3px solid #0dcaf0 !important;
+    }
+
+    .nav-tabs .nav-link:hover {
+        opacity: 1;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .tab-content>.tab-pane {
+            display: block !important;
+            opacity: 1 !important;
+            page-break-after: always;
+        }
+
+        .card {
+            border: 1px solid #333 !important;
+        }
+    }
+</style>
 
 {{!-- Keep the Signature section as it is --}}

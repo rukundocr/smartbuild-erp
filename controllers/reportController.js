@@ -5,32 +5,36 @@ const { logAction } = require('../utils/logger');
 
 exports.getVATSummary = async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, year } = req.query;
         let dateFilter = {};
 
+        const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+
         if (startDate || endDate) {
-            dateFilter = {};
             if (startDate) dateFilter.$gte = new Date(startDate);
             if (endDate) {
                 const end = new Date(endDate);
                 end.setHours(23, 59, 59, 999);
                 dateFilter.$lte = end;
             }
+        } else {
+            // Default to Yearly Filter (Jan 1st to Dec 31st)
+            dateFilter.$gte = new Date(selectedYear, 0, 1);
+            const endOfYear = new Date(selectedYear, 11, 31);
+            endOfYear.setHours(23, 59, 59, 999);
+            dateFilter.$lte = endOfYear;
         }
 
         // 1. VAT Output (Collected from Sales)
-        const salesQuery = (startDate || endDate) ? { invoiceDate: dateFilter } : {};
-        const salesData = await RRASale.find(salesQuery);
+        const salesData = await RRASale.find({ invoiceDate: dateFilter });
         const totalOutput = salesData.reduce((acc, curr) => acc + (curr.vatAmount || 0), 0);
 
         // 2. VAT Input (Paid for Purchases)
-        const purchaseQuery = (startDate || endDate) ? { date: dateFilter } : {};
-        const purchaseData = await RRAPurchase.find(purchaseQuery);
+        const purchaseData = await RRAPurchase.find({ date: dateFilter });
         const totalInput = purchaseData.reduce((acc, curr) => acc + (curr.vat || 0), 0);
 
         // 3. Withholding Tax (WHT 15% from Workers)
-        const whtQuery = (startDate || endDate) ? { date: dateFilter } : {};
-        const casualData = await CasualPayment.find(whtQuery);
+        const casualData = await CasualPayment.find({ date: dateFilter });
         const totalWHT = casualData.reduce((acc, curr) => acc + (curr.taxAmount || 0), 0);
 
         // VAT Position (Can be positive [Payable] or negative [Credit])
@@ -38,6 +42,13 @@ exports.getVATSummary = async (req, res) => {
 
         // Total Remittance = (Net VAT) + (WHT)
         const totalTaxLiability = vatPayable + totalWHT;
+
+        // CIT TAX Calculation (28% of Annual Profit)
+        const totalSales = salesData.reduce((acc, curr) => acc + ((curr.totalAmountExclVAT || 0) + (curr.vatAmount || 0)), 0);
+        const totalPurchases = purchaseData.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+
+        const annualProfit = totalSales - (totalPurchases + totalWHT);
+        const citTax = annualProfit > 0 ? annualProfit * 0.28 : 0;
 
         await logAction(
             req.user._id,
@@ -47,14 +58,23 @@ exports.getVATSummary = async (req, res) => {
             `Generated VAT/Tax Summary Report. Output: ${totalOutput.toLocaleString()} RWF, Input: ${totalInput.toLocaleString()} RWF, Net Payable: ${vatPayable.toLocaleString()} RWF`
         );
 
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+
         res.render('reports/vat-summary', {
             totalOutput,
             totalInput,
             vatPayable,
             totalWHT,
             totalTaxLiability,
+            totalSales,
+            totalPurchases,
+            annualProfit,
+            citTax,
             startDate,
             endDate,
+            selectedYear,
+            years,
             title: 'Tax Declaration Summary'
         });
     } catch (err) {

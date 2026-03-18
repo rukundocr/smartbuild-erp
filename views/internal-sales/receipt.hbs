@@ -65,8 +65,16 @@
 </head>
 
 <body>
-    <div class="no-print mt-3 text-center">
-        <button class="btn btn-primary" onclick="window.print()">Print Receipt</button>
+    <div class="no-print mt-3 text-center mb-3">
+        <a href="/internal/sales/download-pdf/{{invoice._id}}?format=a4" class="btn btn-primary me-2" target="_blank">
+            <i class="fas fa-file-pdf"></i> Print A4
+        </a>
+        <a href="/internal/sales/download-pdf/{{invoice._id}}?format=thermal" class="btn btn-dark me-2" target="_blank">
+            <i class="fas fa-receipt"></i> Print Thermal (80mm)
+        </a>
+        <button class="btn btn-outline-primary me-2" onclick="window.print()">
+            <i class="fas fa-print"></i> Native Print
+        </button>
         <a href="/internal/sales/summary" class="btn btn-outline-secondary">Back to Sales</a>
     </div>
 
