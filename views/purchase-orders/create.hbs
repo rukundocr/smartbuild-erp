@@ -1,0 +1,213 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">New Purchase Order</h2>
+        <a href="/internal/purchase-orders" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <style>
+        .form-label { color: #fff !important; font-weight: 600; }
+        .card { background-color: #111; border: 1px solid #222; }
+    </style>
+
+    <form action="/internal/purchase-orders/create" method="POST" id="poForm">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 text-primary">Order Details</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Select Supplier</label>
+                        <select name="supplier" class="form-select select2" required>
+                            <option value="">-- Select Supplier --</option>
+                            {{#each suppliers}}
+                            <option value="{{this._id}}">{{this.name}} (TIN: {{this.tin}})</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expected Delivery Date</label>
+                        <input type="date" name="expectedDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Order details, shipping instructions..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card p-4 text-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-primary">Order Items</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%;">Category</th>
+                                    <th style="width: 35%;">Item (Name | Specs | Desc)</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="poItemsBody">
+                                <!-- Dynamic rows here -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="4" class="text-end">Grand Total:</th>
+                                    <th id="grandTotal" class="text-primary fw-bold">0 RWF</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-3 py-2">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Purchase Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Template for new row -->
+<template id="itemRowTemplate">
+    <tr>
+        <td>
+            <select class="form-select category-filter" onchange="filterItems(this)">
+                <option value="">-- All Categories --</option>
+                {{#each categories}}
+                <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </td>
+        <td>
+            <select name="items[INDEX][itemId]" class="form-select item-select" required onchange="updatePrice(this)">
+                <option value="" data-category="">-- Select Item --</option>
+                {{#each items}}
+                <option value="{{this._id}}" data-price="{{this.buyingPrice}}" data-category="{{this.category}}">
+                    [{{this.category}}] {{this.itemName}} 
+                    {{#if this.specification}} - {{this.specification}}{{/if}}
+                    {{#if this.description}} ({{this.description}}){{/if}}
+                    - stock: {{this.quantity}}
+                </option>
+                {{/each}}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="items[INDEX][quantity]" class="form-control qty-input px-1" min="0.01" step="any" value="1" required oninput="calculateTotal(this)">
+        </td>
+        <td>
+            <input type="number" name="items[INDEX][price]" class="form-control price-input px-1" step="any" required oninput="calculateTotal(this)">
+        </td>
+        <td class="row-total text-info fw-bold small">0 RWF</td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>
+    let rowIndex = 0;
+
+    function addRow() {
+        const template = document.getElementById('itemRowTemplate').innerHTML;
+        const newRow = template.replace(/INDEX/g, rowIndex++);
+        $('#poItemsBody').append(newRow);
+        
+        // Initialize select2 for the new row
+        const $newSelect = $('.item-select').last();
+        $newSelect.select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('#poForm')
+        });
+    }
+
+    function filterItems(categorySelect) {
+        const category = $(categorySelect).val();
+        const row = $(categorySelect).closest('tr');
+        const itemSelect = row.find('.item-select');
+        
+        // Destroy select2 to update options
+        itemSelect.select2('destroy');
+        
+        // Reset and hide/show options
+        itemSelect.val('');
+        itemSelect.find('option').each(function() {
+            const itemCat = $(this).data('category');
+            if (category === "" || itemCat === category || itemCat === "") {
+                $(this).show().prop('disabled', false);
+            } else {
+                $(this).hide().prop('disabled', true);
+            }
+        });
+        
+        // Re-initialize select2
+        itemSelect.select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('#poForm')
+        });
+    }
+
+    function removeRow(btn) {
+        $(btn).closest('tr').remove();
+        updateGrandTotal();
+    }
+
+    function updatePrice(select) {
+        const val = $(select).val();
+        if (!val) return;
+
+        // Check for duplicates
+        let duplicate = false;
+        $('.item-select').each(function() {
+            if (this !== select && $(this).val() === val) {
+                duplicate = true;
+                return false;
+            }
+        });
+
+        if (duplicate) {
+            alert("This item is already added to the order. Please adjust the quantity in the existing row.");
+            $(select).val('').trigger('change');
+            return;
+        }
+
+        const price = $(select).find(':selected').data('price') || 0;
+        const row = $(select).closest('tr');
+        row.find('.price-input').val(price);
+        calculateTotal(row.find('.qty-input')[0]);
+    }
+
+    function calculateTotal(input) {
+        const row = $(input).closest('tr');
+        const qty = parseFloat(row.find('.qty-input').val()) || 0;
+        const price = parseFloat(row.find('.price-input').val()) || 0;
+        const total = qty * price;
+        row.find('.row-total').text(new Intl.NumberFormat('en-US').format(total) + ' RWF');
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let grand = 0;
+        $('.row-total').each(function() {
+            const text = $(this).text().replace(' RWF', '').replace(/,/g, '');
+            grand += parseFloat(text) || 0;
+        });
+        $('#grandTotal').text(new Intl.NumberFormat('en-US').format(grand) + ' RWF');
+    }
+
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'bootstrap-5' });
+        addRow(); // Start with one row
+    });
+</script>

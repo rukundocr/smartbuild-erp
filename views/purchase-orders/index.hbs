@@ -1,0 +1,121 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Purchase Orders</h2>
+        <a href="/internal/purchase-orders/create" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> New Purchase Order
+        </a>
+    </div>
+
+    <div class="card p-4 text-white">
+        <div class="table-responsive">
+            <table id="poTable" class="table table-dark table-hover align-middle">
+                <thead>
+                     <tr>
+                        <th>Order Date</th>
+                        <th>Supplier</th>
+                        <th>Expected Date</th>
+                        <th>Sub-Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each pos}}
+                    <tr>
+                        <td>{{formatDate this.orderDate}}</td>
+                        <td class="fw-bold text-primary">{{this.supplier.name}}</td>
+                        <td>{{formatDate this.expectedDate}}</td>
+                        <td class="fw-bold text-info">{{formatCurrency this.totalAmount}}</td>
+                        <td>
+                            {{#if (eq this.status 'Sent')}}
+                            <span class="badge bg-info">Sent</span>
+                            {{else if (eq this.status 'Partial')}}
+                            <span class="badge bg-warning">Partial Delivery</span>
+                            {{else if (eq this.status 'Completed')}}
+                            <span class="badge bg-success">Completed</span>
+                            {{else if (eq this.status 'Cancelled')}}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{this.status}}</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-light" onclick="viewItems('{{substring this._id 0 8}}', '{{json this.items}}')" title="Quick View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="/internal/purchase-orders/download-pdf/{{this._id}}" target="_blank" class="btn btn-sm btn-outline-primary" title="PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <a href="/internal/purchase-orders/receive/{{this._id}}" class="btn btn-sm btn-outline-success" title="Receive Items">
+                                <i class="fas fa-truck"></i>
+                            </a>
+                            <a href="/internal/purchase-orders/edit/{{this._id}}" class="btn btn-sm btn-outline-info" title="Edit Order">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form action="/internal/purchase-orders/delete/{{this._id}}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this Purchase Order?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Quick View -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">PO Items: #<span id="modalPoId"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-dark table-sm border-secondary">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty Requested</th>
+                            <th>Qty Delivered</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalItemsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewItems(id, itemsJson) {
+        const items = JSON.parse(itemsJson);
+        $('#modalPoId').text(id);
+        let body = '';
+        items.forEach(i => {
+            body += `<tr>
+                <td>${i.item ? i.item.itemName : 'Unknown'}</td>
+                <td>${i.quantityRequested}</td>
+                <td>${i.quantityDelivered}</td>
+                <td>${new Intl.NumberFormat('en-US').format(i.buyingPrice)} RWF</td>
+            </tr>`;
+        });
+        $('#modalItemsBody').html(body);
+        new bootstrap.Modal('#viewModal').show();
+    }
+</script>
+
+<script>
+    $(document).ready(function () {
+        $('#poTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: ['csv', 'print'],
+            pageLength: 10,
+            order: [[0, 'desc']]
+        });
+    });
+</script>

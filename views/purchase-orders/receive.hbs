@@ -1,0 +1,98 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Receive Items: PO #{{substring po._id 0 8}}</h2>
+        <a href="/internal/purchase-orders" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <style>
+        .form-label { color: #fff !important; font-weight: 600; }
+        .card { background-color: #111; border: 1px solid #222; }
+        p strong { color: #0d6efd; }
+    </style>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-4 mb-4 text-white">
+                <h5 class="fw-bold mb-3 text-primary">Order Info</h5>
+                <p><strong>Supplier:</strong> {{po.supplier.name}}</p>
+                <p><strong>Order Date:</strong> {{formatDate po.orderDate}}</p>
+                <p><strong>Status:</strong> 
+                    {{#if (eq po.status 'Sent')}}
+                    <span class="badge bg-info">Sent</span>
+                    {{else if (eq po.status 'Partial')}}
+                    <span class="badge bg-warning">Partial Delivery</span>
+                    {{else if (eq po.status 'Completed')}}
+                    <span class="badge bg-success">Completed</span>
+                    {{else}}
+                    <span class="badge bg-secondary">{{po.status}}</span>
+                    {{/if}}
+                </p>
+                {{#if po.notes}}
+                <p><strong>Notes:</strong> {{po.notes}}</p>
+                {{/if}}
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <form action="/internal/purchase-orders/receive/{{po._id}}" method="POST">
+                <div class="card p-4 text-white">
+                    <h5 class="fw-bold mb-3 text-primary">Confirm Deliveries</h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Requested</th>
+                                    <th>Delivered So Far</th>
+                                    <th>New Delivery Quantity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each po.items}}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{this.item.itemName}}</div>
+                                        <small class="text-secondary">{{this.item.sku}}</small>
+                                    </td>
+                                    <td>{{this.quantityRequested}}</td>
+                                    <td>{{this.quantityDelivered}}</td>
+                                    <td>
+                                        {{#if (eq this.status 'Delivered')}}
+                                        <span class="text-success fw-bold">Fully Delivered</span>
+                                        {{else}}
+                                        <input type="hidden" name="deliveries[{{@index}}][poItemId]" value="{{this._id}}">
+                                        <input type="number" name="deliveries[{{@index}}][quantityDelivered]" class="form-control" min="0" step="any" placeholder="0">
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if (eq this.status 'Delivered')}}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        {{else if (eq this.status 'Partial')}}
+                                        <i class="fas fa-clock text-warning"></i>
+                                        {{else}}
+                                        <i class="fas fa-history text-info"></i>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {{#if (eq po.status 'Completed')}}
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle me-2"></i> This order has been fully delivered.
+                    </div>
+                    {{else}}
+                    <button type="submit" class="btn btn-success w-100 mt-3 py-2">
+                        <i class="fas fa-save me-2"></i> Save & Confirm Deliveries
+                    </button>
+                    {{/if}}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

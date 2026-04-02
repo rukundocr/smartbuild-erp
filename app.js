@@ -155,6 +155,9 @@ app.engine('hbs', engine({
         },
         multiply: function (a, b) {
             return (parseFloat(a) || 0) * (parseFloat(b) || 0);
+        },
+        json: function (obj) {
+            return JSON.stringify(obj);
         }
     }
 }));
@@ -164,7 +167,7 @@ app.set('view engine', 'hbs');
 
 // Middleware
 app.use(morgan('dev')); // Console logging
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -202,6 +205,8 @@ app.use('/casual-workers', require('./routes/casualWorkers'));
 app.use('/internal/inventory', require('./routes/internalInventory'));
 app.use('/internal/clients', require('./routes/clientRoutes'));
 app.use('/internal/sales', require('./routes/internalSales'));
+app.use('/internal/suppliers', require('./routes/supplierRoutes'));
+app.use('/internal/purchase-orders', require('./routes/purchaseOrderRoutes'));
 
 
 // This middleware triggers only if none of the routes above match the URL

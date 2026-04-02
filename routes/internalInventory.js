@@ -10,5 +10,6 @@ router.post('/update/:id', ensureAuthenticated, inventoryController.updateInvent
 router.get('/delete/:id', ensureAuthenticated, ensureAdmin, inventoryController.deleteInventory);
 router.get('/next-sku/:category', ensureAuthenticated, inventoryController.getNextSKU);
 router.get('/download-pdf', ensureAuthenticated, inventoryController.downloadInventoryPDF);
+router.get('/download-excel', ensureAuthenticated, inventoryController.downloadInventoryExcel);
 
 module.exports = router;

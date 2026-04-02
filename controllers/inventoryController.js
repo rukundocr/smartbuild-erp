@@ -1,6 +1,7 @@
 const { Inventory, validateInventory } = require('../models/Inventory');
 const { logAction } = require('../utils/logger');
 const { generateInventoryPDF } = require('../utils/inventoryPdfGenerator');
+const XLSX = require('xlsx');
 
 exports.getInventory = async (req, res) => {
     try {
@@ -145,6 +146,70 @@ exports.downloadInventoryPDF = async (req, res) => {
     } catch (err) {
         console.error(err);
         req.flash('error_msg', 'Error generating PDF');
+        res.redirect('/internal/inventory');
+    }
+};
+
+exports.downloadInventoryExcel = async (req, res) => {
+    try {
+        const { category } = req.query;
+        let filter = {};
+        if (category && category !== 'All' && category !== '') {
+            filter.category = category;
+        }
+
+        const items = await Inventory.find(filter).sort({ itemName: 1 });
+
+        const data = items.map(item => ({
+            'SKU': item.sku,
+            'Item Name': item.itemName,
+            'Specification': item.specification || '',
+            'Category': item.category,
+            'Sub-Category': item.subCategory || '',
+            'Description': item.description || '',
+            'Current Stock': item.quantity,
+            'Min Stock Level': item.minStockLevel,
+            'Buying Price (RWF)': item.buyingPrice,
+            'Selling Price (RWF)': item.defaultSellingPrice,
+            'Status': item.quantity <= item.minStockLevel ? 'Low Stock' : 'Healthy'
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Adjust column widths
+        const wscols = [
+            { wch: 15 }, // SKU
+            { wch: 30 }, // Item Name
+            { wch: 20 }, // Specification
+            { wch: 15 }, // Category
+            { wch: 15 }, // Sub-Category
+            { wch: 35 }, // Description
+            { wch: 12 }, // Current Stock
+            { wch: 15 }, // Min Stock Level
+            { wch: 15 }, // Buying Price
+            { wch: 15 }, // Selling Price
+            { wch: 12 }  // Status
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        res.set({
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename=Inventory_Report_${category || 'All'}_${new Date().toISOString().split('T')[0]}.xlsx`,
+            'Content-Length': buffer.length
+        });
+
+        res.send(buffer);
+
+        await logAction(req.user._id, 'DOWNLOAD', 'INTERNAL_INVENTORY', null, `Downloaded Excel report for category: ${category || 'All'}`);
+
+    } catch (err) {
+        console.error("Excel Export Error:", err);
+        req.flash('error_msg', 'Error generating Excel file');
         res.redirect('/internal/inventory');
     }
 };

@@ -5,6 +5,9 @@
             <a href="/internal/inventory/download-pdf" id="downloadPdfBtn" class="btn btn-outline-danger me-2">
                 <i class="fas fa-file-pdf me-2"></i> Download PDF
             </a>
+            <a href="/internal/inventory/download-excel" id="downloadExcelBtn" class="btn btn-outline-success me-2">
+                <i class="fas fa-file-excel me-2"></i> Download Excel
+            </a>
             <a href="/internal/inventory/new" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> Add Items
             </a>
@@ -316,11 +319,16 @@
         $('#categoryFilter').on('change', function () {
             table.column(3).search(this.value).draw();
 
-            // Update Download PDF link with the current filter
-            const baseUrl = '/internal/inventory/download-pdf';
+            // Update Download links with the current filter
+            const pdfBase = '/internal/inventory/download-pdf';
+            const excelBase = '/internal/inventory/download-excel';
             const category = this.value;
-            const newUrl = category ? `${baseUrl}?category=${encodeURIComponent(category)}` : baseUrl;
-            $('#downloadPdfBtn').attr('href', newUrl);
+            
+            const pdfUrl = category ? `${pdfBase}?category=${encodeURIComponent(category)}` : pdfBase;
+            const excelUrl = category ? `${excelBase}?category=${encodeURIComponent(category)}` : excelBase;
+            
+            $('#downloadPdfBtn').attr('href', pdfUrl);
+            $('#downloadExcelBtn').attr('href', excelUrl);
         });
     });
 </script>

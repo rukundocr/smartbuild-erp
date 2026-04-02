@@ -1,0 +1,148 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Suppliers</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i class="fas fa-plus me-2"></i> Add Supplier
+        </button>
+    </div>
+
+    <div class="card p-4 text-white">
+        <div class="table-responsive">
+            <table id="suppliersTable" class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Supplier Name</th>
+                        <th>TIN</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each suppliers}}
+                    <tr>
+                        <td class="fw-bold text-primary">{{this.name}}</td>
+                        <td>{{this.tin}}</td>
+                        <td>{{this.phone}}</td>
+                        <td>{{this.email}}</td>
+                        <td>{{this.address}}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info me-1"
+                                onclick="editSupplier('{{this._id}}', '{{this.name}}', '{{this.tin}}', '{{this.phone}}', '{{this.email}}', '{{this.address}}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form action="/internal/suppliers/delete/{{this._id}}" method="POST" class="d-inline" onsubmit="return confirm('Delete this supplier?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Supplier Modal -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <form action="/internal/suppliers/create" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Add New Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Supplier Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">TIN (Optional)</label>
+                        <input type="text" name="tin" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Supplier Modal -->
+<div class="modal fade" id="editSupplierModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <form id="editSupplierForm" method="POST">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Edit Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Supplier Name</label>
+                        <input type="text" name="name" id="editSupplierName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">TIN</label>
+                        <input type="text" name="tin" id="editSupplierTIN" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" id="editSupplierPhone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="editSupplierEmail" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" id="editSupplierAddress" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white">Update Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editSupplier(id, name, tin, phone, email, address) {
+        document.getElementById('editSupplierForm').action = `/internal/suppliers/edit/${id}`;
+        document.getElementById('editSupplierName').value = name;
+        document.getElementById('editSupplierTIN').value = tin;
+        document.getElementById('editSupplierPhone').value = phone;
+        document.getElementById('editSupplierEmail').value = email;
+        document.getElementById('editSupplierAddress').value = address;
+
+        new bootstrap.Modal(document.getElementById('editSupplierModal')).show();
+    }
+
+    $(document).ready(function () {
+        $('#suppliersTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: ['csv', 'print'],
+            pageLength: 10
+        });
+    });
+</script>
