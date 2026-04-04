@@ -7,7 +7,8 @@ exports.getClients = async (req, res) => {
         const clients = await Client.find().sort({ clientName: 1 });
         res.render('clients/index', {
             title: 'Internal Clients | SmartBuild',
-            clients
+            clients,
+            currentTab: 'clients'
         });
     } catch (err) {
         console.error(err);

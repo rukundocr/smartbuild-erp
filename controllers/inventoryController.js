@@ -8,7 +8,8 @@ exports.getInventory = async (req, res) => {
         const items = await Inventory.find().sort({ createdAt: -1 });
         res.render('inventory/index', {
             title: 'Internal Inventory | SmartBuild',
-            items
+            items,
+            currentTab: 'inventory'
         });
     } catch (err) {
         console.error(err);
@@ -19,7 +20,8 @@ exports.getInventory = async (req, res) => {
 
 exports.getAddInventoryForm = async (req, res) => {
     res.render('inventory/new', {
-        title: 'Add New Inventory'
+        title: 'Add New Inventory',
+        currentTab: 'inventory'
     });
 };
 

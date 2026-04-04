@@ -1,0 +1,67 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-secondary bg-black shadow-sm">
+            <div class="card-body p-2">
+                <ul class="nav nav-pills nav-fill gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link {{#if (eq currentTab 'inventory')}}active bg-primary fw-bold text-white{{else}}text-light{{/if}}"
+                            href="/internal/inventory">
+                            <i class="fas fa-warehouse me-2"></i>Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{#if (eq currentTab 'sales')}}active bg-primary fw-bold text-white{{else}}text-light{{/if}}"
+                            data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Sales & Invoicing
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
+                            <li><a class="dropdown-item" href="/internal/sales/create"><i
+                                        class="fas fa-plus-circle me-2"></i>Create Invoice</a></li>
+                            <li><a class="dropdown-item" href="/internal/sales/summary"><i
+                                        class="fas fa-history me-2"></i>Sales Summary</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{#if (eq currentTab 'clients')}}active bg-primary fw-bold text-white{{else}}text-light{{/if}}"
+                            href="/internal/clients">
+                            <i class="fas fa-user-tie me-2"></i>Clients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{#if (eq currentTab 'suppliers')}}active bg-primary fw-bold text-white{{else}}text-light{{/if}}"
+                            href="/internal/suppliers">
+                            <i class="fas fa-truck-loading me-2"></i>Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{#if (eq currentTab 'purchase-orders')}}active bg-primary fw-bold text-white{{else}}text-light{{/if}}"
+                            href="/internal/purchase-orders">
+                            <i class="fas fa-file-invoice me-2"></i>Purchase Orders
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-pills .nav-link {
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        color: #f8f9fa !important;
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #fff !important;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-pills .nav-link.active {
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+        color: #fff !important;
+        border: none;
+    }
+</style>

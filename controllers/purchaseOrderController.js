@@ -24,7 +24,10 @@ exports.getPurchaseOrders = async (req, res) => {
             return { ...po, totalAmount: total };
         });
 
-        res.render('purchase-orders/index', { pos: posWithTotals });
+        res.render('purchase-orders/index', { 
+            pos: posWithTotals,
+            currentTab: 'purchase-orders'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).render('500', { layout: false });
@@ -38,7 +41,12 @@ exports.getCreatePO = async (req, res) => {
         const inventoryItems = await Inventory.find().sort({ itemName: 1 }).lean();
         // Get unique categories
         const categories = [...new Set(inventoryItems.map(item => item.category))].sort();
-        res.render('purchase-orders/create', { suppliers, items: inventoryItems, categories });
+        res.render('purchase-orders/create', { 
+            suppliers, 
+            items: inventoryItems, 
+            categories,
+            currentTab: 'purchase-orders'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).render('500', { layout: false });

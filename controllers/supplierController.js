@@ -5,7 +5,10 @@ const { logAction } = require('../utils/logger');
 exports.getSuppliers = async (req, res) => {
     try {
         const suppliers = await Supplier.find().sort({ createdAt: -1 }).lean();
-        res.render('suppliers/index', { suppliers });
+        res.render('suppliers/index', { 
+            suppliers,
+            currentTab: 'suppliers'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).render('500', { layout: false });
@@ -42,7 +45,10 @@ exports.getEditSupplier = async (req, res) => {
             req.flash('error_msg', 'Supplier not found');
             return res.redirect('/internal/suppliers');
         }
-        res.render('suppliers/edit', { supplier });
+        res.render('suppliers/edit', { 
+            supplier,
+            currentTab: 'suppliers'
+        });
     } catch (err) {
         console.error(err);
         res.redirect('/internal/suppliers');

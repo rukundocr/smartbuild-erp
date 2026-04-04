@@ -202,6 +202,7 @@ app.use('/rra-sales', require('./routes/rraSales'));
 app.use('/reports', reportRoutes);
 app.use('/loans', loanRoutes);
 app.use('/casual-workers', require('./routes/casualWorkers'));
+app.use('/internal/management', require('./routes/internalManagement'));
 app.use('/internal/inventory', require('./routes/internalInventory'));
 app.use('/internal/clients', require('./routes/clientRoutes'));
 app.use('/internal/sales', require('./routes/internalSales'));

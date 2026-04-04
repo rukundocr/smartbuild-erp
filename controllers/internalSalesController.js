@@ -14,7 +14,8 @@ exports.getCreateInvoice = async (req, res) => {
             title: 'Create Internal Invoice | SmartBuild',
             items,
             clients,
-            invoiceCount
+            invoiceCount,
+            currentTab: 'sales'
         });
     } catch (err) {
         console.error(err);
@@ -132,7 +133,8 @@ exports.getSalesSummary = async (req, res) => {
             netProfit,
             startDate,
             endDate,
-            status
+            status,
+            currentTab: 'sales'
         });
     } catch (err) {
         console.error(err);
@@ -192,6 +194,12 @@ exports.getEditInvoice = async (req, res) => {
 
         if (!invoice) return res.redirect('/internal/sales/summary');
 
+        // PREVENT EDITING NON-PENDING
+        if (invoice.status !== 'Pending') {
+            req.flash('error_msg', `Cannot edit a ${invoice.status} invoice. Only Pending invoices are editable.`);
+            return res.redirect('/internal/sales/summary');
+        }
+
         res.render('internal-sales/edit', {
             title: 'Edit Internal Invoice',
             invoice,
@@ -226,6 +234,12 @@ exports.updateInvoice = async (req, res) => {
 
         const oldInvoice = await InternalInvoice.findById(req.params.id);
         if (!oldInvoice) return res.redirect('/internal/sales/summary');
+
+        // PREVENT UPDATING NON-PENDING
+        if (oldInvoice.status !== 'Pending') {
+            req.flash('error_msg', `Updates rejected: This invoice is already ${oldInvoice.status} and cannot be modified.`);
+            return res.redirect('/internal/sales/summary');
+        }
 
         req.body.status = req.body.status || oldInvoice.status;
 
@@ -271,6 +285,12 @@ exports.deleteInvoice = async (req, res) => {
     try {
         const invoice = await InternalInvoice.findById(req.params.id);
         if (!invoice) return res.redirect('/internal/sales/summary');
+
+        // PREVENT DELETION IF NOT PENDING
+        if (invoice.status !== 'Pending') {
+            req.flash('error_msg', `Cannot delete a ${invoice.status} invoice. Only Pending invoices can be deleted.`);
+            return res.redirect('/internal/sales/summary');
+        }
 
         // Stock Return Logic on Deletion:
         // Only Pending invoices return stock (they haven't been finalized but stock was reserved).
