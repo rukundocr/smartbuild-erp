@@ -80,66 +80,65 @@ const generateThermalPDF = (invoice) => {
     const contentWidth = pageWidth - (margin * 2);
 
     // Calculate height roughly based on items
-    let pageHeight = 100 + (invoice.items.length * 15);
+    // Header (~30mm) + Items (items * 10mm) + Total (~15mm) + Footer (~20mm)
+    let pageHeight = 65 + (invoice.items.length * 12);
+    if (pageHeight < 100) pageHeight = 100; // Minimum height for thermal roll to be handled well
 
     const doc = new jsPDF({
         unit: 'mm',
         format: [pageWidth, pageHeight]
     });
 
-    let y = 10;
+    let y = 8;
 
     // Header
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("SMARTBUILD LTD", pageWidth / 2, y, { align: 'center' });
 
-    y += 5;
-    doc.setFontSize(9);
+    y += 6;
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("Internal Inventory Supply", pageWidth / 2, y, { align: 'center' });
-    y += 4;
+    y += 5;
+    doc.setFontSize(9);
     doc.text("+250 785193526", pageWidth / 2, y, { align: 'center' });
 
     y += 4;
-    doc.setLineWidth(0.2);
+    doc.setLineWidth(0.3);
     doc.line(margin, y, pageWidth - margin, y);
 
     // Invoice Info
-    y += 5;
+    y += 6;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("INVOICE NO:", margin, y);
+    doc.text("INVOICE:", margin, y);
     doc.setFont("helvetica", "normal");
-    doc.text(invoice.invoiceNo, margin + 25, y);
+    doc.text(invoice.invoiceNo, pageWidth - margin, y, { align: 'right' });
 
     y += 5;
     doc.setFont("helvetica", "bold");
     doc.text("DATE:", margin, y);
     doc.setFont("helvetica", "normal");
-    doc.text(new Date(invoice.date).toLocaleDateString('en-GB'), margin + 15, y);
-
-    y += 5;
-    doc.setFont("helvetica", "bold");
-    doc.text("STATUS:", margin, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(invoice.status, margin + 18, y);
+    doc.text(new Date(invoice.date).toLocaleDateString('en-GB'), pageWidth - margin, y, { align: 'right' });
 
     y += 5;
     doc.setFont("helvetica", "bold");
     doc.text("CLIENT:", margin, y);
     doc.setFont("helvetica", "normal");
     const clName = invoice.clientId.clientName.toUpperCase();
-    doc.text(clName.length > 20 ? clName.slice(0, 20) : clName, margin + 18, y);
+    doc.text(clName.length > 25 ? clName.slice(0, 25) + "..." : clName, pageWidth - margin, y, { align: 'right' });
 
     y += 5;
+    doc.setLineWidth(0.1);
     doc.line(margin, y, pageWidth - margin, y);
 
     // Table Header
     y += 5;
     doc.setFont("helvetica", "bold");
-    doc.text("Item Details", margin, y);
-    doc.text("Total", pageWidth - margin, y, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text("ITEM DESCRIPTION", margin, y);
+    doc.text("TOTAL (RWF)", pageWidth - margin, y, { align: 'right' });
 
     y += 2;
     doc.line(margin, y, pageWidth - margin, y);
@@ -147,43 +146,57 @@ const generateThermalPDF = (invoice) => {
     // Table Body
     y += 5;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
 
     invoice.items.forEach((item) => {
         const itemName = item.itemId.specification
             ? `${item.itemId.itemName} - ${item.itemId.specification}`
             : item.itemId.itemName;
 
-        // Wrap text to use full width
-        const splitTitle = doc.splitTextToSize(itemName, pageWidth - (margin * 2));
+        // Wrap text
+        const splitTitle = doc.splitTextToSize(itemName, contentWidth);
+        doc.setFont("helvetica", "bold");
         doc.text(splitTitle, margin, y);
         y += (splitTitle.length * 4);
 
-        // Quantity x Unit Price = Total
-        doc.text(`${item.qty} x ${item.priceAtSale.toLocaleString()} RWF`, margin + 5, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${item.qty} x ${item.priceAtSale.toLocaleString()}`, margin + 2, y);
         doc.text((item.qty * item.priceAtSale).toLocaleString(), pageWidth - margin, y, { align: 'right' });
 
         y += 6;
+        
+        // Add a very subtle line between items if multiple
+        if (invoice.items.length > 1) {
+            doc.setDrawColor(200);
+            doc.line(margin, y - 2, pageWidth - margin, y - 2);
+            doc.setDrawColor(0);
+        }
     });
 
-    y += 1;
+    y += 2;
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
 
     // Total
-    y += 6;
-    doc.setFontSize(11);
+    y += 7;
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("GRAND TOTAL:", margin, y);
     doc.text((invoice.grandTotal).toLocaleString() + " RWF", pageWidth - margin, y, { align: 'right' });
 
     // Footer
-    y += 10;
-    doc.setFontSize(8);
+    y += 12;
+    doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.text("Thank you for your business!", pageWidth / 2, y, { align: 'center' });
-    y += 4;
-    doc.text("*** Internal Document ***", pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("*** Internal Receipt ***", pageWidth / 2, y, { align: 'center' });
+    
+    y += 5;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    const timestamp = `Generated: ${new Date().toLocaleString()}`;
+    doc.text(timestamp, pageWidth / 2, y, { align: 'center' });
 
     return doc.output('arraybuffer');
 };

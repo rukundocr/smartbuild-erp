@@ -4,6 +4,9 @@ const { Client } = require('../models/Client');
 const { generateInternalPDF } = require('../utils/internalInvoicePdf');
 const { generateInternalSummaryPDF } = require('../utils/internalSummaryPdf');
 const { logAction } = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 
 exports.getCreateInvoice = async (req, res) => {
     try {
@@ -183,6 +186,73 @@ exports.downloadPDF = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Error generating PDF');
+    }
+};
+
+exports.printDirect = async (req, res) => {
+    try {
+        const invoice = await InternalInvoice.findById(req.params.id)
+            .populate('clientId')
+            .populate('items.itemId');
+
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+        const printerName = "POS-80(copy of 2 )"; 
+        
+        // Generate Text Content (Simple format for POS-80)
+        let content = "SMARTBUILD LTD\n";
+        content += "Internal Project Supplies\n";
+        content += `Date: ${new Date(invoice.date).toLocaleDateString('en-GB')}\n`;
+        content += "--------------------------------\n";
+        content += `Invoice: ${invoice.invoiceNo}\n`;
+        content += `Client:  ${invoice.clientId.clientName}\n`;
+        content += `Status:  ${invoice.status}\n`;
+        content += "--------------------------------\n";
+        content += "ITEMS DESCRIPTION\n";
+        
+        invoice.items.forEach(item => {
+            const name = item.itemId.specification 
+                ? `${item.itemId.itemName} - ${item.itemId.specification}`
+                : item.itemId.itemName;
+            content += `${name}\n`;
+            content += `  ${item.qty} x ${item.priceAtSale} = ${item.qty * item.priceAtSale}\n`;
+        });
+        
+        content += "--------------------------------\n";
+        content += `GRAND TOTAL: ${invoice.grandTotal} RWF\n`;
+        content += "\nThank you for your business!\n";
+        content += "*** Internal Receipt ***\n\n\n\n\n";
+
+        // Create temp folder if it doesn't exist
+        const tempDir = path.join(__dirname, '../temp');
+        if (!fs.existsSync(tempDir)){
+            fs.mkdirSync(tempDir);
+        }
+
+        const tempFilePath = path.join(tempDir, `receipt_${invoice._id}.txt`);
+        fs.writeFileSync(tempFilePath, content);
+
+        // PowerShell command to print directly to the named printer
+        const command = `powershell -Command "Get-Content -Path '${tempFilePath}' | Out-Printer -Name '${printerName}'"`;
+
+        exec(command, (error, stdout, stderr) => {
+            // Attempt to cleanup temp file
+            setTimeout(() => {
+                if (fs.existsSync(tempFilePath)) {
+                    try { fs.unlinkSync(tempFilePath); } catch(e) {}
+                }
+            }, 5000); // Wait a bit for spooler
+
+            if (error) {
+                console.error(`Print Error: ${error.message}`);
+                return res.status(500).json({ success: false, message: 'Printing failed' });
+            }
+            res.json({ success: true, message: 'Print job sent to ' + printerName });
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
 

@@ -8,6 +8,7 @@ router.post('/create', ensureAuthenticated, internalSalesController.createInvoic
 router.get('/summary', ensureAuthenticated, internalSalesController.getSalesSummary);
 router.get('/receipt/:id', ensureAuthenticated, internalSalesController.getReceipt);
 router.get('/download-pdf/:id', ensureAuthenticated, internalSalesController.downloadPDF);
+router.get('/print-direct/:id', ensureAuthenticated, internalSalesController.printDirect);
 router.get('/edit/:id', ensureAuthenticated, internalSalesController.getEditInvoice);
 router.post('/edit/:id', ensureAuthenticated, internalSalesController.updateInvoice);
 router.get('/delete/:id', ensureAuthenticated, ensureAdmin, internalSalesController.deleteInvoice);

@@ -8,70 +8,89 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: #fff;
+            background: #f8f9fa;
             color: #000;
             font-family: 'Courier New', Courier, monospace;
-        }
-
-        .receipt-container {
-            max-width: 400px;
-            margin: 20px auto;
-            border: 1px dashed #ccc;
             padding: 20px;
         }
 
+        .receipt-container {
+            width: 80mm;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 8mm;
+            text-align: center; /* Centralized content */
+        }
+
         .header {
-            text-align: center;
-            border-bottom: 2px solid #000;
+            border-bottom: 2px dashed #000;
             padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .item-list {
+            text-align: left; /* Keep items left-aligned for readability but container is centered */
             margin-bottom: 15px;
         }
 
         .item-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
+            margin-bottom: 3px;
+            font-size: 10pt;
         }
 
         .total-row {
             border-top: 1px double #000;
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 10px;
+            padding-top: 5px;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 12pt;
         }
 
         .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            border-top: 1px solid #eee;
+            margin-top: 20px;
+            font-size: 9pt;
+            border-top: 1px dashed #000;
             padding-top: 10px;
         }
 
         @media print {
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .receipt-container {
+                width: 80mm;
+                margin: 0;
+                padding: 5mm;
+                box-shadow: none;
+                border: none;
+            }
             .no-print {
                 display: none;
-            }
-
-            .receipt-container {
-                border: none;
-                margin: 0;
-                padding: 0;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="no-print mt-3 text-center mb-3">
+    <div class="no-print mt-3 text-center mb-4">
         <a href="/internal/sales/download-pdf/{{invoice._id}}?format=a4" class="btn btn-primary me-2" target="_blank">
-            <i class="fas fa-file-pdf"></i> Print A4
+            <i class="fas fa-file-pdf"></i> Print A4 (Office)
         </a>
         <a href="/internal/sales/download-pdf/{{invoice._id}}?format=thermal" class="btn btn-dark me-2" target="_blank">
-            <i class="fas fa-receipt"></i> Print Thermal (80mm)
+            <i class="fas fa-receipt"></i> Download Thermal (PDF)
         </a>
+        <button class="btn btn-success me-2" onclick="printDirectly()">
+            <i class="fas fa-bolt"></i> Direct USB Print (Skip Dialog)
+        </button>
         <button class="btn btn-outline-primary me-2" onclick="window.print()">
             <i class="fas fa-print"></i> Native Print
         </button>
@@ -80,31 +99,38 @@
 
     <div class="receipt-container">
         <div class="header">
-            <h3>SMARTBUILD ERP</h3>
-            <p class="mb-0">Internal Project Supplies</p>
-            <p class="small">Date: {{formatDate invoice.date}}</p>
+            <h4 class="fw-bold mb-1">SMARTBUILD LTD</h4>
+            <p class="mb-0 small">Internal Project Supplies</p>
+            <p class="small mb-0">Date: {{formatDate invoice.date}}</p>
         </div>
 
-        <div class="mb-3">
-            <strong>Invoice:</strong> {{invoice.invoiceNo}}<br>
-            <strong>Status:</strong> <span class="text-uppercase fw-bold">{{invoice.status}}</span><br>
-            <strong>Client:</strong> {{invoice.clientId.clientName}}<br>
-            <strong>Phone:</strong> {{invoice.clientId.phone}}
-        </div>
-
-        <div class="border-bottom mb-2 pb-1">
-            <strong>ITEMS:</strong>
-        </div>
-
-        {{#each invoice.items}}
-        <div class="mb-2">
-            <div>{{this.itemId.itemName}} {{#if this.itemId.specification}}- {{this.itemId.specification}}{{/if}}</div>
-            <div class="item-row">
-                <span>{{this.qty}} x {{this.priceAtSale}}</span>
-                <span>{{formatCurrency (add 0 (multiply this.qty this.priceAtSale))}}</span>
+        <div class="text-start small mb-3 border-bottom pb-2">
+            <div class="d-flex justify-content-between">
+                <span><strong>Invoice:</strong></span>
+                <span>{{invoice.invoiceNo}}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span><strong>Status:</strong></span>
+                <span class="text-uppercase fw-bold">{{invoice.status}}</span>
+            </div>
+            <div class="mt-1">
+                <strong>Client:</strong> {{invoice.clientId.clientName}}<br>
+                {{#if invoice.clientId.phone}}<strong>Phone:</strong> {{invoice.clientId.phone}}{{/if}}
             </div>
         </div>
-        {{/each}}
+
+        <div class="item-list">
+            <div class="fw-bold border-bottom x-small mb-2">ITEMS DESCRIPTION</div>
+            {{#each invoice.items}}
+            <div class="mb-3">
+                <div class="small fw-bold">{{this.itemId.itemName}} {{#if this.itemId.specification}}- {{this.itemId.specification}}{{/if}}</div>
+                <div class="item-row">
+                    <span>{{this.qty}} x {{formatCurrency this.priceAtSale}}</span>
+                    <span>{{formatCurrency (add 0 (multiply this.qty this.priceAtSale))}}</span>
+                </div>
+            </div>
+            {{/each}}
+        </div>
 
         <div class="total-row item-row">
             <span>GRAND TOTAL</span>
@@ -112,14 +138,110 @@
         </div>
 
         <div class="footer">
-            <p>Thank you for your business!</p>
-            <p>*** Internal Receipt ***</p>
+            <p class="mb-1">Thank you for your business!</p>
+            <p class="fw-bold">*** Internal Receipt ***</p>
+            <p class="x-small text-secondary">Record Date: {{formatDate invoice.date}}</p>
         </div>
     </div>
 
     <script>
-        // Simple mock of multiply if needed since it's common
-        // But better to define it in helpers if not already there
+        /**
+         * Direct Thermal Printing using Web-USB API (ESC/POS)
+         * Bypasses Windows Spooler and Printer Properties
+         */
+        async function printDirectly() {
+            if (!("usb" in navigator)) {
+                alert("Your browser does not support Web-USB. Please use a modern version of Chrome or Edge.");
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="printDirectly()"]');
+            const originalContent = btn.innerHTML;
+
+            try {
+                // 1. Request USB Device (Shows a list of all USB devices)
+                const device = await navigator.usb.requestDevice({ filters: [] });
+                
+                await device.open();
+                if (device.configuration === null) {
+                    await device.selectConfiguration(1);
+                }
+                
+                // Typical POS printers use Interface 0
+                const interfaceNum = 0;
+                await device.claimInterface(interfaceNum);
+
+                // Find the Bulk Out endpoint (where we send data)
+                const outEndpoint = device.configuration.interfaces[interfaceNum].alternate.endpoints.find(e => e.direction === 'out');
+                
+                if (!outEndpoint) {
+                    throw new Error("Could not find an output endpoint on this USB device.");
+                }
+
+                const encoder = new TextEncoder();
+                const ESC = '\x1B';
+                const GS = '\x1D';
+                const INIT = ESC + '@';
+                const CENTER = ESC + 'a' + '\x01';
+                const LEFT = ESC + 'a' + '\x00';
+                const BOLD_ON = ESC + 'E' + '\x01';
+                const BOLD_OFF = ESC + 'E' + '\x00';
+                const FEED_CUT = GS + 'V' + '\x42' + '\x00'; 
+                const LINE_FEED = '\n';
+
+                // Helper to send chunks (USB has buffer limits)
+                const send = async (rawString) => {
+                    await device.transferOut(outEndpoint.endpointNumber, encoder.encode(rawString));
+                };
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending to USB...';
+
+                // 2. Build and Send Data
+                await send(INIT + CENTER + BOLD_ON + "SMARTBUILD LTD" + LINE_FEED);
+                await send(BOLD_OFF + "Internal Project Supplies" + LINE_FEED);
+                await send("Date: {{formatDate invoice.date}}" + LINE_FEED);
+                await send("--------------------------------" + LINE_FEED + LEFT);
+                
+                await send("Invoice: {{invoice.invoiceNo}}" + LINE_FEED);
+                await send("Client:  {{invoice.clientId.clientName}}" + LINE_FEED);
+                await send("Status:  {{invoice.status}}" + LINE_FEED);
+                await send("--------------------------------" + LINE_FEED + BOLD_ON + "ITEMS DESCRIPTION" + LINE_FEED + BOLD_OFF);
+
+                {{#each invoice.items}}
+                await send(BOLD_ON + {{{json this.itemId.itemName}}} + BOLD_OFF + LINE_FEED);
+                await send("  {{this.qty}} x {{this.priceAtSale}} = {{multiply this.qty this.priceAtSale}}" + LINE_FEED);
+                {{/each}}
+
+                await send("--------------------------------" + LINE_FEED + CENTER + BOLD_ON + "GRAND TOTAL: {{invoice.grandTotal}} RWF" + LINE_FEED);
+                await send(BOLD_OFF + LINE_FEED + "Thank you for your business!" + LINE_FEED);
+                await send("*** Internal Receipt ***" + LINE_FEED + LINE_FEED + LINE_FEED + LINE_FEED + FEED_CUT);
+
+                // Success
+                btn.innerHTML = '<i class="fas fa-check"></i> Printed!';
+                btn.classList.replace('btn-success', 'btn-outline-success');
+                
+                // Cleanup
+                await device.releaseInterface(interfaceNum);
+                await device.close();
+
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('btn-outline-success', 'btn-success');
+                    btn.disabled = false;
+                }, 3000);
+
+            } catch (err) {
+                console.error('USB Print Error:', err);
+                let msg = err.message;
+                if (msg.includes("claimed")) msg = "Printer is currently in use by another program (or the Windows Spooler).";
+                if (err.name !== 'NotFoundError') {
+                    alert("USB Printing Error: " + msg + "\n\nTip: You may need to use 'Zadig' to change the printer driver to 'WinUSB' for direct browser access.");
+                }
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 

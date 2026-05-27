@@ -69,6 +69,12 @@
             <i class="fas fa-chart-line me-2"></i>Corporate Income Tax (CIT)
         </button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-white fw-bold border-secondary bg-dark px-4 py-3" id="iqp-tab" data-bs-toggle="tab"
+            data-bs-target="#iqp-content" type="button" role="tab">
+            <i class="fas fa-business-time me-2"></i>Quarterly Prepayment (IQP)
+        </button>
+    </li>
 </ul>
 
 <div class="tab-content" id="taxReportTabsContent">
@@ -224,6 +230,103 @@
                         </tr>
                     </tfoot>
                 </table>
+        </div>
+    </div>
+</div>
+
+    <!-- Tab 4: Income Tax Quarterly Prepayment (IQP) -->
+    <div class="tab-pane fade" id="iqp-content" role="tabpanel">
+        <div class="card bg-dark border-secondary p-4 mb-4 no-print shadow-sm">
+            <form action="/reports/vat-summary" method="GET" class="row g-3 align-items-end">
+                {{#if startDate}}<input type="hidden" name="startDate" value="{{startDate}}">{{/if}}
+                {{#if endDate}}<input type="hidden" name="endDate" value="{{endDate}}">{{/if}}
+                {{#if selectedYear}}<input type="hidden" name="year" value="{{selectedYear}}">{{/if}}
+                
+                <div class="col-md-4">
+                    <label class="small text-secondary fw-bold text-uppercase mb-2">Select Target Year</label>
+                    <select name="iqpYear" class="form-select bg-black text-white border-secondary shadow-sm">
+                        {{#each years}}
+                            <option value="{{this}}" {{#if (eq this ../iqpYear)}}selected{{/if}}>Year {{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="small text-secondary fw-bold text-uppercase mb-2">Select Target Quarter</label>
+                    <select name="iqpQuarter" class="form-select bg-black text-white border-secondary shadow-sm">
+                        <option value="1" {{#if (eq ../iqpQuarter 1)}}selected{{/if}}>Quarter 1 (Jan - Mar)</option>
+                        <option value="2" {{#if (eq ../iqpQuarter 2)}}selected{{/if}}>Quarter 2 (Apr - Jun)</option>
+                        <option value="3" {{#if (eq ../iqpQuarter 3)}}selected{{/if}}>Quarter 3 (Jul - Sep)</option>
+                        <option value="4" {{#if (eq ../iqpQuarter 4)}}selected{{/if}}>Quarter 4 (Oct - Dec)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-info text-dark fw-bold w-100 shadow-sm">
+                        <i class="fas fa-calculator me-1"></i> CALCULATE IQP
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+                    <i class="fas fa-chart-line me-2 text-info"></i> IQP Calculation Details (Method 2: Turnover Ratio)
+                </h5>
+                <div class="card border-secondary bg-dark overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 align-middle">
+                            <thead class="bg-black text-secondary small">
+                                <tr>
+                                    <th class="ps-4">CALCULATION COMPONENT</th>
+                                    <th>FISCAL PERIOD</th>
+                                    <th class="text-end pe-4">VALUE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-4 fw-bold">Previous Year's Annual CIT</td>
+                                    <td class="text-info">Full Year {{prevIqpYear}}</td>
+                                    <td class="text-end pe-4 text-warning">{{formatCurrency prevYearCIT}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 fw-bold">Previous Year's Total Sales</td>
+                                    <td class="text-info">Full Year {{prevIqpYear}}</td>
+                                    <td class="text-end pe-4 text-info">{{formatCurrency prevYearSales}}</td>
+                                </tr>
+                                <tr class="bg-black bg-opacity-25">
+                                    <td class="ps-4 italic">Turnover Ratio (CIT / Sales)</td>
+                                    <td class="text-secondary italic">Standard RRA Ratio</td>
+                                    <td class="text-end pe-4 fw-bold text-success">{{iqpRatioPercent}}%</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 fw-bold">Current Quarter's Sales</td>
+                                    <td class="text-warning">Year {{iqpYear}} - Quarter {{iqpQuarter}}</td>
+                                    <td class="text-end pe-4 text-info">{{formatCurrency currQuarterSales}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <h5 class="text-white fw-bold mb-3">
+                    <i class="fas fa-file-invoice-dollar me-2 text-success"></i> Prepayment Summary
+                </h5>
+                <div class="card border-secondary bg-dark p-4 text-center h-100 shadow d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="badge bg-info text-dark mb-3 px-3 py-2 text-uppercase fw-bold">Quarter {{iqpQuarter}} Prepayment</span>
+                        <h4 class="text-secondary small text-uppercase">Prepayment Tax Due</h4>
+                        <h2 class="text-success fw-bold my-3">{{formatCurrency iqpTax}}</h2>
+                    </div>
+                    <div class="border-top border-secondary pt-3 mt-3">
+                        <p class="text-secondary small mb-0">
+                            <i class="fas fa-info-circle me-1"></i> Based on Rwandan tax law, quarterly prepayments must be declared and settled to RRA within the month following the end of each quarter.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -264,5 +367,18 @@
         }
     }
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('iqpYear') || urlParams.has('iqpQuarter')) {
+            const iqpTab = document.getElementById('iqp-tab');
+            if (iqpTab) {
+                const tab = new bootstrap.Tab(iqpTab);
+                tab.show();
+            }
+        }
+    });
+</script>
 
 {{!-- Keep the Signature section as it is --}}
